@@ -6,11 +6,14 @@ import { Badge } from '@/components/ui/badge';
 
 const DashboardStats = () => {
   const wilayahData = [
-    { nama: 'Desa Sukamaju', stunting: 12, total: 156, persentase: 7.7, status: 'sedang' },
-    { nama: 'Desa Sejahtera', stunting: 8, total: 134, persentase: 6.0, status: 'rendah' },
-    { nama: 'Kelurahan Mawar', stunting: 15, total: 178, persentase: 8.4, status: 'tinggi' },
-    { nama: 'Desa Harapan', stunting: 6, total: 142, persentase: 4.2, status: 'rendah' },
-    { nama: 'Kelurahan Melati', stunting: 18, total: 189, persentase: 9.5, status: 'tinggi' }
+    { nama: 'Airmadidi', stunting: 8, total: 145, persentase: 5.5, status: 'rendah' },
+    { nama: 'Dimembe', stunting: 12, total: 189, persentase: 6.3, status: 'sedang' },
+    { nama: 'Kalawat', stunting: 15, total: 178, persentase: 8.4, status: 'tinggi' },
+    { nama: 'Wori', stunting: 6, total: 142, persentase: 4.2, status: 'rendah' },
+    { nama: 'Likupang Timur', stunting: 18, total: 203, persentase: 8.9, status: 'tinggi' },
+    { nama: 'Talawaan', stunting: 9, total: 167, persentase: 5.4, status: 'rendah' },
+    { nama: 'Kauditan', stunting: 14, total: 195, persentase: 7.2, status: 'sedang' },
+    { nama: 'Kema', stunting: 11, total: 156, persentase: 7.1, status: 'sedang' }
   ];
 
   const getStatusColor = (status: string) => {
@@ -28,13 +31,17 @@ const DashboardStats = () => {
     return 'bg-green-500';
   };
 
+  const totalStunting = wilayahData.reduce((acc, wilayah) => acc + wilayah.stunting, 0);
+  const totalAnak = wilayahData.reduce((acc, wilayah) => acc + wilayah.total, 0);
+  const rataRataPrevalensi = (totalStunting / totalAnak * 100).toFixed(1);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Statistik per Wilayah */}
       <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
-            📊 Statistik per Wilayah
+            📊 Statistik per Wilayah Minahasa Utara
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -68,39 +75,67 @@ const DashboardStats = () => {
         </CardContent>
       </Card>
 
-      {/* Grafik Tren */}
-      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
-            📈 Tren 6 Bulan Terakhir
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { bulan: 'Jan 2024', kasus: 76, perubahan: '-3%' },
-              { bulan: 'Feb 2024', kasus: 78, perubahan: '+2%' },
-              { bulan: 'Mar 2024', kasus: 82, perubahan: '+5%' },
-              { bulan: 'Apr 2024', kasus: 85, perubahan: '+4%' },
-              { bulan: 'Mei 2024', kasus: 87, perubahan: '+2%' },
-              { bulan: 'Jun 2024', kasus: 89, perubahan: '+2%' }
-            ].map((data, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
-                  <span className="font-medium text-gray-700">{data.bulan}</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-gray-800">{data.kasus} kasus</div>
-                  <div className={`text-sm ${data.perubahan.startsWith('+') ? 'text-red-500' : 'text-green-500'}`}>
-                    {data.perubahan}
+      {/* Grafik Tren & Ringkasan */}
+      <div className="space-y-6">
+        {/* Ringkasan Total */}
+        <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
+              📈 Ringkasan Kabupaten
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{totalAnak}</div>
+                <div className="text-sm text-gray-600">Total Anak</div>
+              </div>
+              <div className="text-center p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg">
+                <div className="text-2xl font-bold text-red-600">{totalStunting}</div>
+                <div className="text-sm text-gray-600">Kasus Stunting</div>
+              </div>
+            </div>
+            <div className="text-center p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg">
+              <div className="text-2xl font-bold text-emerald-600">{rataRataPrevalensi}%</div>
+              <div className="text-sm text-gray-600">Rata-rata Prevalensi</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tren Bulanan */}
+        <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
+              📊 Tren 6 Bulan Terakhir
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { bulan: 'Jan 2024', kasus: 76, perubahan: '-3%' },
+                { bulan: 'Feb 2024', kasus: 78, perubahan: '+2%' },
+                { bulan: 'Mar 2024', kasus: 82, perubahan: '+5%' },
+                { bulan: 'Apr 2024', kasus: 85, perubahan: '+4%' },
+                { bulan: 'Mei 2024', kasus: 87, perubahan: '+2%' },
+                { bulan: 'Jun 2024', kasus: totalStunting, perubahan: '+2%' }
+              ].map((data, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+                    <span className="font-medium text-gray-700">{data.bulan}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-gray-800">{data.kasus} kasus</div>
+                    <div className={`text-sm ${data.perubahan.startsWith('+') ? 'text-red-500' : 'text-green-500'}`}>
+                      {data.perubahan}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

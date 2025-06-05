@@ -13,10 +13,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Users, TrendingUp, AlertTriangle, User, LogOut, Settings } from 'lucide-react';
+import { MapPin, Users, TrendingUp, AlertTriangle, User, LogOut, Settings, Download, FileText, BarChart } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -34,22 +36,45 @@ const Index = () => {
     };
     setCurrentUser(userData);
     setIsLoggedIn(true);
+    toast({
+      title: "Login Berhasil",
+      description: `Selamat datang, ${userData.nama}!`,
+    });
   };
 
   const handleRegister = (userData: any) => {
     setCurrentUser(userData);
     setIsLoggedIn(true);
+    toast({
+      title: "Registrasi Berhasil",
+      description: "Akun Anda telah berhasil dibuat!",
+    });
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setActiveTab('dashboard');
+    toast({
+      title: "Logout Berhasil",
+      description: "Anda telah keluar dari sistem",
+    });
   };
 
   const handleProfileSave = (profileData: any) => {
     setCurrentUser(profileData);
     setShowProfileEdit(false);
+    toast({
+      title: "Profil Diperbarui",
+      description: "Data profil Anda telah berhasil disimpan",
+    });
+  };
+
+  const handleDownloadReport = (type: string) => {
+    toast({
+      title: "Laporan Diunduh",
+      description: `Laporan ${type} sedang dipersiapkan...`,
+    });
   };
 
   if (!isLoggedIn) {
@@ -222,12 +247,39 @@ const Index = () => {
                   📊 Laporan & Analisis
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 <p className="text-gray-600 mb-4">
                   Fitur laporan dan analisis untuk Kabupaten Minahasa Utara. 
                   Anda dapat mengunduh laporan bulanan, statistik per desa, 
                   dan analisis tren stunting.
                 </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Button 
+                    onClick={() => handleDownloadReport('Bulanan')}
+                    className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  >
+                    <Download className="h-6 w-6" />
+                    <span>Laporan Bulanan</span>
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => handleDownloadReport('Per Desa')}
+                    className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                  >
+                    <FileText className="h-6 w-6" />
+                    <span>Laporan Per Desa</span>
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => handleDownloadReport('Analisis Tren')}
+                    className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    <BarChart className="h-6 w-6" />
+                    <span>Analisis Tren</span>
+                  </Button>
+                </div>
+                
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-yellow-800 text-sm">
                     <strong>Catatan:</strong> Untuk menyimpan data anak yang baru didaftarkan 

@@ -53,12 +53,63 @@ const ChildDataForm = () => {
     status: ''
   });
 
+  // Dusun/wilayah di Minahasa Utara berdasarkan kecamatan
   const dusunOptions = [
-    'Desa Sukamaju',
-    'Desa Sejahtera', 
-    'Kelurahan Mawar',
-    'Desa Harapan',
-    'Kelurahan Melati'
+    // Kecamatan Airmadidi
+    'Airmadidi Bawah',
+    'Airmadidi Atas',
+    'Sarongsong I',
+    'Sarongsong II',
+    'Rap-Rap',
+    'Bitung',
+    
+    // Kecamatan Dimembe
+    'Dimembe',
+    'Tanggari',
+    'Tanggari Baru',
+    'Popontolen',
+    'Tatelu',
+    'Tatelu Rondor',
+    
+    // Kecamatan Kalawat
+    'Kalawat',
+    'Lolak',
+    'Kamanga',
+    'Kolongan',
+    'Maumbi',
+    
+    // Kecamatan Wori
+    'Wori',
+    'Manado Tua Satu',
+    'Manado Tua Dua',
+    'Siladen',
+    'Bunaken',
+    
+    // Kecamatan Likupang Timur
+    'Likupang',
+    'Wineru',
+    'Pulisan',
+    'Bahoi',
+    'Bentenan',
+    
+    // Kecamatan Talawaan
+    'Talawaan',
+    'Paslaten',
+    'Pineleng',
+    'Sumalangwon',
+    
+    // Kecamatan Kauditan
+    'Kauditan I',
+    'Kauditan II',
+    'Tiwoho',
+    'Kima Bajo',
+    'Kima Atas',
+    
+    // Kecamatan Kema
+    'Kema I',
+    'Kema II',
+    'Kema III',
+    'Tempok'
   ];
 
   const handleInputChange = (field: keyof ChildData, value: string) => {
@@ -248,7 +299,7 @@ const ChildDataForm = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih dusun/wilayah" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 overflow-y-auto">
                       {dusunOptions.map((dusun) => (
                         <SelectItem key={dusun} value={dusun}>{dusun}</SelectItem>
                       ))}
