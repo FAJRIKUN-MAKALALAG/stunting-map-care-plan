@@ -1,14 +1,15 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Users, MapPin } from 'lucide-react';
+import { Search, Filter, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import VillageDetail from './VillageDetail';
 
 const VillageList = () => {
   const [selectedVillage, setSelectedVillage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDetail, setShowDetail] = useState(false);
 
   // Data desa asli di Kabupaten Minahasa Utara
   const villageData = [
@@ -113,6 +114,20 @@ const VillageList = () => {
     village.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
     village.kecamatan.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const selectedVillageData = villageData.find(v => v.id === selectedVillage);
+
+  if (showDetail && selectedVillageData) {
+    return (
+      <VillageDetail 
+        village={selectedVillageData} 
+        onBack={() => {
+          setShowDetail(false);
+          setSelectedVillage(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -249,7 +264,10 @@ const VillageList = () => {
                         </div>
                       </div>
 
-                      <Button className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+                      <Button 
+                        onClick={() => setShowDetail(true)}
+                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                      >
                         Lihat Detail Lengkap
                       </Button>
                     </div>

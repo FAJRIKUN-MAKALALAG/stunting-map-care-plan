@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { AlertTriangle, CheckCircle, Calculator, Save } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Calculator, Save, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { calculateAge, calculateWHOZScore, getStuntingRecommendation, ZScoreResult } from '@/utils/whoZScore';
 
 interface ChildData {
   nama: string;
@@ -41,17 +41,8 @@ const ChildDataForm = () => {
     catatan: ''
   });
 
-  const [zScore, setZScore] = useState<{
-    beratTinggi: number | null;
-    tinggiUsia: number | null;
-    beratUsia: number | null;
-    status: string;
-  }>({
-    beratTinggi: null,
-    tinggiUsia: null,
-    beratUsia: null,
-    status: ''
-  });
+  const [zScoreResult, setZScoreResult] = useState<ZScoreResult | null>(null);
+  const [recommendations, setRecommendations] = useState<string[]>([]);
 
   // Dusun/wilayah di Minahasa Utara berdasarkan kecamatan
   const dusunOptions = [
@@ -116,55 +107,40 @@ const ChildDataForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const calculateAge = (birthDate: string) => {
-    if (!birthDate) return 0;
-    const today = new Date();
-    const birth = new Date(birthDate);
-    const ageInMonths = (today.getFullYear() - birth.getFullYear()) * 12 + today.getMonth() - birth.getMonth();
-    return ageInMonths;
-  };
-
   const calculateZScore = () => {
     const age = calculateAge(formData.tanggalLahir);
     const weight = parseFloat(formData.beratBadan);
     const height = parseFloat(formData.tinggiBadan);
+    const gender = formData.jenisKelamin as 'male' | 'female';
 
-    if (!age || !weight || !height) {
+    if (!age || !weight || !height || !gender) {
       toast({
         title: "Data Tidak Lengkap",
-        description: "Mohon lengkapi tanggal lahir, berat badan, dan tinggi badan",
+        description: "Mohon lengkapi tanggal lahir, jenis kelamin, berat badan, dan tinggi badan",
         variant: "destructive"
       });
       return;
     }
 
-    // Simplified Z-score calculation (in real implementation, use WHO standard tables)
-    const heightForAge = (height - (45 + age * 2.5)) / 5; // Simplified formula
-    const weightForHeight = (weight - (2.5 + height * 0.1)) / 2; // Simplified formula
-    const weightForAge = (weight - (3 + age * 0.5)) / 2; // Simplified formula
-
-    let status = 'Normal';
-    if (heightForAge < -2) {
-      status = 'Stunting';
-    } else if (heightForAge < -1) {
-      status = 'Risiko Stunting';
-    } else if (weightForHeight < -2) {
-      status = 'Kurus';
-    } else if (weightForHeight > 2) {
-      status = 'Gemuk';
+    if (age < 0 || age > 60) {
+      toast({
+        title: "Usia Tidak Valid",
+        description: "Sistem ini untuk anak usia 0-60 bulan (0-5 tahun)",
+        variant: "destructive"
+      });
+      return;
     }
 
-    setZScore({
-      beratTinggi: Number(weightForHeight.toFixed(2)),
-      tinggiUsia: Number(heightForAge.toFixed(2)),
-      beratUsia: Number(weightForAge.toFixed(2)),
-      status
-    });
+    const result = calculateWHOZScore(height, weight, age, gender);
+    const recs = getStuntingRecommendation(result, age);
+    
+    setZScoreResult(result);
+    setRecommendations(recs);
 
     toast({
       title: "Z-Score Berhasil Dihitung",
-      description: `Status gizi: ${status}`,
-      variant: status === 'Normal' ? "default" : "destructive"
+      description: `Status: ${result.stuntingStatus}`,
+      variant: result.isStunted ? "destructive" : "default"
     });
   };
 
@@ -200,23 +176,25 @@ const ChildDataForm = () => {
       lingkarKepala: '',
       catatan: ''
     });
-    setZScore({
-      beratTinggi: null,
-      tinggiUsia: null,
-      beratUsia: null,
-      status: ''
-    });
+    setZScoreResult(null);
+    setRecommendations([]);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'Stunting Berat': return 'bg-red-200 text-red-900 border-red-300';
       case 'Stunting': return 'bg-red-100 text-red-800 border-red-200';
       case 'Risiko Stunting': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Kurus': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Gemuk': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'Normal': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  const getStatusIcon = (status: string) => {
+    if (status.includes('Stunting')) {
+      return <AlertTriangle className="h-5 w-5" />;
+    }
+    return <CheckCircle className="h-5 w-5" />;
   };
 
   return (
@@ -226,7 +204,7 @@ const ChildDataForm = () => {
           <CardTitle className="text-2xl font-bold text-gray-800 flex items-center">
             👶 Input Data Anak
           </CardTitle>
-          <p className="text-gray-600">Tambahkan data antropometri anak untuk monitoring stunting</p>
+          <p className="text-gray-600">Tambahkan data antropometri anak untuk monitoring stunting menggunakan standar WHO</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -328,6 +306,13 @@ const ChildDataForm = () => {
                 📏 Data Antropometri
               </h3>
               
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-blue-800 text-sm">
+                  <strong>📊 Perhitungan berdasarkan Standar WHO:</strong> Sistem ini menggunakan standar WHO Child Growth Standards 2006 
+                  untuk menentukan status gizi dan stunting anak dengan akurat.
+                </p>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="beratBadan">Berat Badan (kg) *</Label>
@@ -375,45 +360,85 @@ const ChildDataForm = () => {
                   className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                 >
                   <Calculator className="h-4 w-4 mr-2" />
-                  Hitung Z-Score
+                  Hitung Z-Score WHO
                 </Button>
               </div>
 
-              {/* Z-Score Results */}
-              {zScore.status && (
+              {/* Enhanced Z-Score Results */}
+              {zScoreResult && (
                 <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-gray-800">Hasil Perhitungan Z-Score</h4>
-                      <Badge className={getStatusColor(zScore.status)}>
-                        {zScore.status}
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold text-gray-800 flex items-center">
+                        {getStatusIcon(zScoreResult.stuntingStatus)}
+                        <span className="ml-2">Hasil Perhitungan Z-Score WHO</span>
+                      </h4>
+                      <Badge className={getStatusColor(zScoreResult.stuntingStatus)}>
+                        {zScoreResult.stuntingStatus}
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div className="text-center p-2 bg-white rounded">
-                        <div className="text-gray-600">Tinggi/Usia</div>
-                        <div className="font-bold text-lg">{zScore.tinggiUsia}</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
+                      <div className="text-center p-3 bg-white rounded border">
+                        <div className="text-gray-600 text-xs">Tinggi/Usia (HAZ)</div>
+                        <div className="font-bold text-lg">{zScoreResult.heightForAge}</div>
+                        <div className="text-xs text-gray-500">Indikator Stunting</div>
                       </div>
-                      <div className="text-center p-2 bg-white rounded">
-                        <div className="text-gray-600">Berat/Tinggi</div>
-                        <div className="font-bold text-lg">{zScore.beratTinggi}</div>
+                      <div className="text-center p-3 bg-white rounded border">
+                        <div className="text-gray-600 text-xs">Berat/Usia (WAZ)</div>
+                        <div className="font-bold text-lg">{zScoreResult.weightForAge}</div>
+                        <div className="text-xs text-gray-500">Indikator Underweight</div>
                       </div>
-                      <div className="text-center p-2 bg-white rounded">
-                        <div className="text-gray-600">Berat/Usia</div>
-                        <div className="font-bold text-lg">{zScore.beratUsia}</div>
+                      <div className="text-center p-3 bg-white rounded border">
+                        <div className="text-gray-600 text-xs">Berat/Tinggi (WHZ)</div>
+                        <div className="font-bold text-lg">{zScoreResult.weightForHeight}</div>
+                        <div className="text-xs text-gray-500">Indikator Wasting</div>
                       </div>
                     </div>
 
-                    {zScore.status === 'Stunting' && (
-                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-2 bg-white/80 rounded">
+                        <div className="text-xs text-gray-600">Status Stunting</div>
+                        <div className="font-medium text-sm">{zScoreResult.stuntingStatus}</div>
+                      </div>
+                      <div className="text-center p-2 bg-white/80 rounded">
+                        <div className="text-xs text-gray-600">Status Gizi</div>
+                        <div className="font-medium text-sm">{zScoreResult.underweightStatus}</div>
+                      </div>
+                      <div className="text-center p-2 bg-white/80 rounded">
+                        <div className="text-xs text-gray-600">Status Wasting</div>
+                        <div className="font-medium text-sm">{zScoreResult.wastingStatus}</div>
+                      </div>
+                    </div>
+
+                    {zScoreResult.isStunted && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                         <div className="flex items-start space-x-2">
                           <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
                           <div>
-                            <div className="font-medium text-red-800">Perhatian: Terindikasi Stunting</div>
+                            <div className="font-medium text-red-800">⚠️ TERINDIKASI STUNTING</div>
                             <div className="text-sm text-red-700">
-                              Segera lakukan konsultasi lebih lanjut dan rujukan ke fasilitas kesehatan.
+                              Anak terindikasi mengalami stunting berdasarkan standar WHO. Segera lakukan rujukan dan intervensi.
                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {recommendations.length > 0 && (
+                      <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <Heart className="h-5 w-5 text-emerald-600 mt-0.5" />
+                          <div>
+                            <div className="font-medium text-emerald-800 mb-2">💡 Rekomendasi Tindakan:</div>
+                            <ul className="text-sm text-emerald-700 space-y-1">
+                              {recommendations.map((rec, index) => (
+                                <li key={index} className="flex items-start space-x-1">
+                                  <span className="text-emerald-500">•</span>
+                                  <span>{rec}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
                         </div>
                       </div>
