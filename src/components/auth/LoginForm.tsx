@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, User, Lock, Heart } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, Heart, Stethoscope, Shield } from 'lucide-react';
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => void;
@@ -29,95 +29,123 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
-        <CardHeader className="text-center pb-8">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full flex items-center justify-center mb-4">
-            <Heart className="h-8 w-8 text-white" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-gray-800">
-            Selamat Datang
-          </CardTitle>
-          <p className="text-gray-600 mt-2">
-            Sistem Pemetaan & Penanggulangan Stunting
-          </p>
-        </CardHeader>
-        
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email
-              </Label>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-emerald-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-40 right-32 w-24 h-24 bg-teal-200/40 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-32 left-1/4 w-40 h-40 bg-blue-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-28 h-28 bg-emerald-300/25 rounded-full blur-2xl"></div>
+      </div>
+
+      <div className="relative flex items-center justify-center min-h-screen p-4">
+        <Card className="w-full max-w-md bg-white/95 backdrop-blur-xl border-0 shadow-2xl shadow-emerald-500/10">
+          <CardHeader className="text-center pb-8 pt-8">
+            {/* Logo/Icon Section */}
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-600 via-teal-600 to-blue-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/30">
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="dokter@puskesmas.go.id"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                  required
-                />
+                <Heart className="h-10 w-10 text-white" />
+                <Stethoscope className="h-6 w-6 text-white/80 absolute -bottom-1 -right-1" />
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Masukkan password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 h-12 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+            
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              Selamat Datang
+            </CardTitle>
+            <p className="text-gray-600 mt-3 text-lg">
+              Sistem Pemetaan & Penanggulangan Stunting
+            </p>
+            <div className="flex items-center justify-center space-x-2 mt-2">
+              <Shield className="h-4 w-4 text-emerald-600" />
+              <span className="text-sm text-emerald-700 font-medium">Kabupaten Minahasa Utara</span>
             </div>
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium rounded-lg transition-all duration-300"
-            >
-              {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Masuk...</span>
+          </CardHeader>
+          
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+                  Email Address
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="dokter@puskesmas.go.id"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-12 h-14 border-2 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20 rounded-xl text-base transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                    required
+                  />
                 </div>
-              ) : (
-                'Masuk'
-              )}
-            </Button>
+              </div>
 
-            <div className="text-center">
-              <p className="text-sm text-gray-600">
-                Belum punya akun?{' '}
-                <button
-                  type="button"
-                  onClick={onSwitchToRegister}
-                  className="text-emerald-600 hover:text-emerald-700 font-medium"
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Masukkan password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-12 pr-12 h-14 border-2 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20 rounded-xl text-base transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-14 bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 hover:from-emerald-700 hover:via-teal-700 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transform hover:scale-[1.02]"
                 >
-                  Daftar sekarang
-                </button>
-              </p>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                  {isLoading ? (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-lg">Memproses...</span>
+                    </div>
+                  ) : (
+                    <span className="text-lg">Masuk ke Sistem</span>
+                  )}
+                </Button>
+              </div>
+
+              <div className="text-center pt-4">
+                <p className="text-gray-600">
+                  Belum punya akun?{' '}
+                  <button
+                    type="button"
+                    onClick={onSwitchToRegister}
+                    className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors hover:underline"
+                  >
+                    Daftar sekarang
+                  </button>
+                </p>
+              </div>
+
+              {/* Quick access for demo */}
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 mt-6">
+                <p className="text-emerald-800 text-sm text-center">
+                  <strong>Demo:</strong> Gunakan email dan password apa saja untuk login
+                </p>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

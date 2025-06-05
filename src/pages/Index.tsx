@@ -9,11 +9,12 @@ import NotificationPanel from '@/components/notifications/NotificationPanel';
 import LoginForm from '@/components/auth/LoginForm';
 import RegisterForm from '@/components/auth/RegisterForm';
 import ProfileEdit from '@/components/profile/ProfileEdit';
+import ProfileView from '@/components/profile/ProfileView';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Users, TrendingUp, AlertTriangle, User, LogOut, Settings, Download, FileText, BarChart } from 'lucide-react';
+import { MapPin, Users, TrendingUp, AlertTriangle, User, LogOut, Settings, Download, FileText, BarChart, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -23,6 +24,7 @@ const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [showProfileView, setShowProfileView] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const handleLogin = (email: string, password: string) => {
@@ -31,8 +33,11 @@ const Index = () => {
       nama: 'Dr. Sarah Mandagi',
       email: email,
       nip: '198505152010012001',
+      telefon: '081234567890',
       puskesmas: 'Puskesmas Airmadidi',
-      wilayahKerja: 'Kecamatan Airmadidi'
+      wilayahKerja: 'Kecamatan Airmadidi',
+      spesialisasi: 'Dokter Umum',
+      avatar: ''
     };
     setCurrentUser(userData);
     setIsLoggedIn(true);
@@ -55,6 +60,8 @@ const Index = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setActiveTab('dashboard');
+    setShowProfileView(false);
+    setShowProfileEdit(false);
     toast({
       title: "Logout Berhasil",
       description: "Anda telah keluar dari sistem",
@@ -64,6 +71,14 @@ const Index = () => {
   const handleProfileSave = (profileData: any) => {
     setCurrentUser(profileData);
     setShowProfileEdit(false);
+    toast({
+      title: "Profil Diperbarui",
+      description: "Data profil Anda telah berhasil disimpan",
+    });
+  };
+
+  const handleProfileUpdate = (updatedUser: any) => {
+    setCurrentUser(updatedUser);
     toast({
       title: "Profil Diperbarui",
       description: "Data profil Anda telah berhasil disimpan",
@@ -105,6 +120,16 @@ const Index = () => {
     );
   }
 
+  if (showProfileView) {
+    return (
+      <ProfileView
+        user={currentUser}
+        onUpdateProfile={handleProfileUpdate}
+        onClose={() => setShowProfileView(false)}
+      />
+    );
+  }
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
@@ -140,8 +165,18 @@ const Index = () => {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => setShowProfileView(true)}
+                  className="text-white hover:bg-white/20"
+                  title="Lihat Profile"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowProfileEdit(true)}
                   className="text-white hover:bg-white/20"
+                  title="Edit Profile"
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
@@ -150,6 +185,7 @@ const Index = () => {
                   size="sm"
                   onClick={handleLogout}
                   className="text-white hover:bg-white/20"
+                  title="Logout"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -175,9 +211,9 @@ const Index = () => {
                   <Users className="h-5 w-5 text-blue-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">1,375</div>
+                  <div className="text-3xl font-bold text-gray-900">2,847</div>
                   <p className="text-xs text-green-600 mt-1">
-                    +12% dari bulan lalu
+                    +8% dari bulan lalu
                   </p>
                 </CardContent>
               </Card>
@@ -190,9 +226,9 @@ const Index = () => {
                   <AlertTriangle className="h-5 w-5 text-red-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-red-600">93</div>
+                  <div className="text-3xl font-bold text-red-600">198</div>
                   <p className="text-xs text-red-500 mt-1">
-                    6.8% dari total anak
+                    7.0% dari total anak
                   </p>
                 </CardContent>
               </Card>
@@ -205,7 +241,7 @@ const Index = () => {
                   <MapPin className="h-5 w-5 text-emerald-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">8</div>
+                  <div className="text-3xl font-bold text-gray-900">15</div>
                   <p className="text-xs text-emerald-600 mt-1">
                     Minahasa Utara
                   </p>
@@ -220,9 +256,9 @@ const Index = () => {
                   <TrendingUp className="h-5 w-5 text-orange-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-orange-600">+3</div>
-                  <p className="text-xs text-orange-500 mt-1">
-                    Kasus baru terdeteksi
+                  <div className="text-3xl font-bold text-orange-600">-5</div>
+                  <p className="text-xs text-green-500 mt-1">
+                    Penurunan kasus baru
                   </p>
                 </CardContent>
               </Card>
