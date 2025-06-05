@@ -17,10 +17,10 @@ const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
       description: 'Ringkasan data'
     },
     {
-      id: 'peta',
-      label: 'Peta Stunting',
+      id: 'desa',
+      label: 'Data Desa',
       icon: MapPin,
-      description: 'Visualisasi geografis'
+      description: 'Daftar desa stunting'
     },
     {
       id: 'input',
