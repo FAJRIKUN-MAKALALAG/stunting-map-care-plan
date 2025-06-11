@@ -21,7 +21,7 @@ ChildDataForm - Form input data anak dengan:
 Validasi Z-Score WHO standar
 Perhitungan status stunting otomatis
 Pilihan dusun/wilayah Sulawesi Utara
-Rekomendasi tindakan berdasarkan status
+Rekomendasi tindakan berdasarkan status menggunakan LLM
 
 🧮 Utility Functions
 whoZScore - Perhitungan Z-Score berdasarkan standar WHO untuk:
@@ -53,6 +53,8 @@ Error Handling - Proper error states dan loading indicators
 Accessibility - ARIA labels dan keyboard navigation
 Performance - Lazy loading dan optimized rendering
 Type Safety - Full TypeScript coverage dengan strict types
+large language models untuk memberikan penjelasan tentang kesehatan anak setelah menghitung z score
+chatbot gemini AI untuk mempermudah orangtua untuk bertanya seputaran stunting
 
 📊 Data Management
 Local Storage - Penyimpanan data sementara di browser
