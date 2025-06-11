@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,14 +12,16 @@ import {
   Heart,
   Stethoscope,
   Shield,
+  Baby,
 } from "lucide-react";
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => void;
   onSwitchToRegister: () => void;
+  onSwitchToParent: () => void;
 }
 
-const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
+const LoginForm = ({ onLogin, onSwitchToRegister, onSwitchToParent }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -57,7 +60,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
             </div>
 
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-              Selamat Datang
+              Portal Tenaga Kesehatan
             </CardTitle>
             <p className="text-gray-600 mt-3 text-lg">
               Sistem Pemetaan & Penanggulangan Stunting
@@ -142,7 +145,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
                 </Button>
               </div>
 
-              <div className="text-center pt-4">
+              <div className="text-center pt-4 space-y-3">
                 <p className="text-gray-600">
                   Belum punya akun?{" "}
                   <button
@@ -153,6 +156,21 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
                     Daftar sekarang
                   </button>
                 </p>
+                
+                <div className="flex items-center">
+                  <div className="flex-1 border-t border-gray-300"></div>
+                  <span className="px-4 text-sm text-gray-500">atau</span>
+                  <div className="flex-1 border-t border-gray-300"></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onSwitchToParent}
+                  className="w-full py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl text-blue-700 font-medium hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 flex items-center justify-center space-x-2"
+                >
+                  <Baby className="h-5 w-5" />
+                  <span>Login sebagai Orang Tua</span>
+                </button>
               </div>
 
               {/* Quick access for demo */}

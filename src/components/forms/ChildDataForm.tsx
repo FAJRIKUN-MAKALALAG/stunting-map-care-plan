@@ -19,6 +19,7 @@ import {
   Calculator,
   Save,
   Heart,
+  Brain,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -27,6 +28,7 @@ import {
   getStuntingRecommendation,
   ZScoreResult,
 } from "@/utils/whoZScore";
+import ZScoreAnalyzer from "@/components/ai/ZScoreAnalyzer";
 
 interface ChildData {
   nama: string;
@@ -60,6 +62,7 @@ const ChildDataForm = () => {
 
   const [zScoreResult, setZScoreResult] = useState<ZScoreResult | null>(null);
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
 
   // Dusun/wilayah di Minahasa Utara berdasarkan kecamatan
   const dusunOptions = [
@@ -162,11 +165,29 @@ const ChildDataForm = () => {
 
     setZScoreResult(result);
     setRecommendations(recs);
+    setShowAIAnalysis(false); // Reset AI analysis when new calculation is done
 
     toast({
       title: "Z-Score Berhasil Dihitung",
       description: `Status: ${result.stuntingStatus}`,
       variant: result.isStunted ? "destructive" : "default",
+    });
+  };
+
+  const generateAIAnalysis = () => {
+    if (!zScoreResult) {
+      toast({
+        title: "Hitung Z-Score Terlebih Dahulu",
+        description: "Silakan hitung Z-Score sebelum menggunakan analisis AI",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowAIAnalysis(true);
+    toast({
+      title: "Analisis AI Berhasil Dihasilkan",
+      description: "Analisis komprehensif telah dibuat berdasarkan data Z-Score",
     });
   };
 
@@ -209,6 +230,7 @@ const ChildDataForm = () => {
     });
     setZScoreResult(null);
     setRecommendations([]);
+    setShowAIAnalysis(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -413,7 +435,7 @@ const ChildDataForm = () => {
                 </div>
               </div>
 
-              <div className="flex justify-center">
+              <div className="flex justify-center space-x-4">
                 <Button
                   type="button"
                   onClick={calculateZScore}
@@ -422,6 +444,17 @@ const ChildDataForm = () => {
                   <Calculator className="h-4 w-4 mr-2" />
                   Hitung Z-Score WHO
                 </Button>
+
+                {zScoreResult && (
+                  <Button
+                    type="button"
+                    onClick={generateAIAnalysis}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    <Brain className="h-4 w-4 mr-2" />
+                    Analisis AI Mendalam
+                  </Button>
+                )}
               </div>
 
               {/* Enhanced Z-Score Results */}
@@ -547,6 +580,18 @@ const ChildDataForm = () => {
                   </CardContent>
                 </Card>
               )}
+
+              {/* AI Analysis Section */}
+              {showAIAnalysis && zScoreResult && (
+                <ZScoreAnalyzer
+                  zScoreResult={zScoreResult}
+                  childName={formData.nama}
+                  ageInMonths={calculateAge(formData.tanggalLahir)}
+                  gender={formData.jenisKelamin as 'male' | 'female'}
+                  weight={parseFloat(formData.beratBadan)}
+                  height={parseFloat(formData.tinggiBadan)}
+                />
+              )}
             </div>
 
             <Separator />
@@ -582,3 +627,5 @@ const ChildDataForm = () => {
 };
 
 export default ChildDataForm;
+
+</edits_to_apply>

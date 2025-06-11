@@ -7,9 +7,11 @@ import VillageList from '@/components/village/VillageList';
 import ChildDataForm from '@/components/forms/ChildDataForm';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import LoginForm from '@/components/auth/LoginForm';
+import ParentLoginForm from '@/components/auth/ParentLoginForm';
 import RegisterForm from '@/components/auth/RegisterForm';
 import ProfileEdit from '@/components/profile/ProfileEdit';
 import ProfileView from '@/components/profile/ProfileView';
+import ParentDashboard from '@/components/dashboard/ParentDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -22,13 +24,13 @@ const Index = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [userRole, setUserRole] = useState<'doctor' | 'parent'>('doctor');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'parent-login'>('login');
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showProfileView, setShowProfileView] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const handleLogin = (email: string, password: string) => {
-    // Simulate successful login
     const userData = {
       nama: 'Dr. Sarah Mandagi',
       email: email,
@@ -41,6 +43,24 @@ const Index = () => {
     };
     setCurrentUser(userData);
     setIsLoggedIn(true);
+    setUserRole('doctor');
+    toast({
+      title: "Login Berhasil",
+      description: `Selamat datang, ${userData.nama}!`,
+    });
+  };
+
+  const handleParentLogin = (email: string, password: string, role: 'parent') => {
+    const userData = {
+      nama: 'Bapak Mandagi',
+      email: email,
+      telefon: '081234567890',
+      alamat: 'Airmadidi Bawah, Minahasa Utara',
+      avatar: ''
+    };
+    setCurrentUser(userData);
+    setIsLoggedIn(true);
+    setUserRole('parent');
     toast({
       title: "Login Berhasil",
       description: `Selamat datang, ${userData.nama}!`,
@@ -50,6 +70,7 @@ const Index = () => {
   const handleRegister = (userData: any) => {
     setCurrentUser(userData);
     setIsLoggedIn(true);
+    setUserRole('doctor');
     toast({
       title: "Registrasi Berhasil",
       description: "Akun Anda telah berhasil dibuat!",
@@ -59,9 +80,11 @@ const Index = () => {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
+    setUserRole('doctor');
     setActiveTab('dashboard');
     setShowProfileView(false);
     setShowProfileEdit(false);
+    setAuthMode('login');
     toast({
       title: "Logout Berhasil",
       description: "Anda telah keluar dari sistem",
@@ -98,6 +121,14 @@ const Index = () => {
         <LoginForm 
           onLogin={handleLogin}
           onSwitchToRegister={() => setAuthMode('register')}
+          onSwitchToParent={() => setAuthMode('parent-login')}
+        />
+      );
+    } else if (authMode === 'parent-login') {
+      return (
+        <ParentLoginForm 
+          onLogin={handleParentLogin}
+          onSwitchToDoctor={() => setAuthMode('login')}
         />
       );
     } else {
@@ -110,6 +141,32 @@ const Index = () => {
     }
   }
 
+  // Parent Dashboard
+  if (userRole === 'parent') {
+    if (showProfileEdit) {
+      return (
+        <ProfileEdit
+          initialData={currentUser}
+          onSave={handleProfileSave}
+          onCancel={() => setShowProfileEdit(false)}
+        />
+      );
+    }
+
+    if (showProfileView) {
+      return (
+        <ProfileView
+          user={currentUser}
+          onUpdateProfile={handleProfileUpdate}
+          onClose={() => setShowProfileView(false)}
+        />
+      );
+    }
+
+    return <ParentDashboard />;
+  }
+
+  // Doctor Dashboard (existing code)
   if (showProfileEdit) {
     return (
       <ProfileEdit
