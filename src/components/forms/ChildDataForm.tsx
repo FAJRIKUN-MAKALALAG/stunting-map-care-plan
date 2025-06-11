@@ -627,5 +627,3 @@ const ChildDataForm = () => {
 };
 
 export default ChildDataForm;
-
-</edits_to_apply>
