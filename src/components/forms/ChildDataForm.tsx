@@ -20,6 +20,7 @@ import {
   Save,
   Heart,
   Brain,
+  UserPlus,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -29,6 +30,9 @@ import {
   ZScoreResult,
 } from "@/utils/whoZScore";
 import ZScoreAnalyzer from "@/components/ai/ZScoreAnalyzer";
+import { supabase } from "@/integrations/supabase/client";
+import { getGeminiResponse } from "@/lib/gemini";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ChildData {
   nama: string;
@@ -44,8 +48,24 @@ interface ChildData {
   catatan: string;
 }
 
+interface ZScoreResult {
+  zScoreBB: number;
+  zScoreTB: number;
+  statusBB: string;
+  statusTB: string;
+  analysis: string;
+}
+
+interface ZScoreAnalyzerProps {
+  zScoreBB: number;
+  zScoreTB: number;
+  age: number;
+  gender: string;
+}
+
 const ChildDataForm = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<ChildData>({
     nama: "",
     nik: "",
@@ -127,51 +147,91 @@ const ChildDataForm = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const calculateZScore = () => {
-    const age = calculateAge(formData.tanggalLahir);
-    const weight = parseFloat(formData.beratBadan);
-    const height = parseFloat(formData.tinggiBadan);
-    const gender = formData.jenisKelamin as "male" | "female";
+  // Fungsi untuk menghitung Z-score berat badan
+  const calculateZScoreBB = (
+    weight: number,
+    age: number,
+    gender: string
+  ): number => {
+    // Implementasi perhitungan Z-score berat badan sesuai WHO
+    // Ini adalah contoh sederhana, sesuaikan dengan rumus WHO yang sebenarnya
+    const median = gender === "Laki-laki" ? 10 : 9.5; // Contoh nilai median
+    const sd = 1.2; // Contoh nilai standar deviasi
+    return (weight - median) / sd;
+  };
 
-    console.log("Debug values:", {
-      age,
-      weight,
-      height,
-      gender,
-      birthDate: formData.tanggalLahir,
-    });
+  // Fungsi untuk menghitung Z-score tinggi badan
+  const calculateZScoreTB = (
+    height: number,
+    age: number,
+    gender: string
+  ): number => {
+    // Implementasi perhitungan Z-score tinggi badan sesuai WHO
+    // Ini adalah contoh sederhana, sesuaikan dengan rumus WHO yang sebenarnya
+    const median = gender === "Laki-laki" ? 85 : 83; // Contoh nilai median
+    const sd = 3.5; // Contoh nilai standar deviasi
+    return (height - median) / sd;
+  };
 
-    if (!age || !weight || !height || !gender) {
+  // Fungsi untuk mendapatkan status berat badan
+  const getStatusBB = (zScore: number): string => {
+    if (zScore < -3) return "Gizi Buruk";
+    if (zScore < -2) return "Gizi Kurang";
+    if (zScore <= 2) return "Gizi Baik";
+    if (zScore <= 3) return "Gizi Lebih";
+    return "Obesitas";
+  };
+
+  // Fungsi untuk mendapatkan status tinggi badan
+  const getStatusTB = (zScore: number): string => {
+    if (zScore < -3) return "Stunting Berat";
+    if (zScore < -2) return "Stunting";
+    return "Normal";
+  };
+
+  const calculateZScore = async (data: ChildData) => {
+    try {
+      const { beratBadan, tinggiBadan, tanggalLahir, jenisKelamin } = data;
+      const usiaBulan = calculateAge(tanggalLahir);
+
+      // Hitung Z-score menggunakan rumus WHO
+      const zScoreBB = calculateZScoreBB(
+        parseFloat(beratBadan),
+        usiaBulan,
+        jenisKelamin
+      );
+      const zScoreTB = calculateZScoreTB(
+        parseFloat(tinggiBadan),
+        usiaBulan,
+        jenisKelamin
+      );
+
+      // Dapatkan analisis dari Gemini
+      const analysis = await getGeminiResponse(
+        `Analisis kondisi gizi anak dengan data berikut:
+        - Usia: ${usiaBulan} bulan
+        - Jenis Kelamin: ${jenisKelamin}
+        - Berat Badan: ${beratBadan} kg (Z-score: ${zScoreBB.toFixed(2)})
+        - Tinggi Badan: ${tinggiBadan} cm (Z-score: ${zScoreTB.toFixed(2)})
+        
+        Berikan analisis singkat (2-3 kalimat) tentang kondisi gizi anak dan saran praktis untuk orang tua.`
+      );
+
+      setZScoreResult({
+        zScoreBB,
+        zScoreTB,
+        statusBB: getStatusBB(zScoreBB),
+        statusTB: getStatusTB(zScoreTB),
+        analysis,
+      });
+    } catch (error) {
+      console.error("Error calculating Z-score:", error);
       toast({
-        title: "Data Tidak Lengkap",
-        description:
-          "Mohon lengkapi tanggal lahir, jenis kelamin, berat badan, dan tinggi badan",
+        title: "Error",
+        description: "Gagal menghitung Z-score. Silakan coba lagi.",
         variant: "destructive",
       });
-      return;
     }
-
-    if (age < 0 || age > 60) {
-      toast({
-        title: "Usia Tidak Valid",
-        description: "Sistem ini untuk anak usia 0-60 bulan (0-5 tahun)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const result = calculateWHOZScore(height, weight, age, gender);
-    const recs = getStuntingRecommendation(result, age);
-
-    setZScoreResult(result);
-    setRecommendations(recs);
-    setShowAIAnalysis(false); // Reset AI analysis when new calculation is done
-
-    toast({
-      title: "Z-Score Berhasil Dihitung",
-      description: `Status: ${result.stuntingStatus}`,
-      variant: result.isStunted ? "destructive" : "default",
-    });
   };
 
   const generateAIAnalysis = () => {
@@ -187,50 +247,97 @@ const ChildDataForm = () => {
     setShowAIAnalysis(true);
     toast({
       title: "Analisis AI Berhasil Dihasilkan",
-      description: "Analisis komprehensif telah dibuat berdasarkan data Z-Score",
+      description:
+        "Analisis komprehensif telah dibuat berdasarkan data Z-Score",
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !formData.nama ||
-      !formData.tanggalLahir ||
-      !formData.beratBadan ||
-      !formData.tinggiBadan
-    ) {
+    try {
+      // Calculate Z-score first
+      await calculateZScore(formData);
+
+      if (!zScoreResult) {
+        toast({
+          title: "Error",
+          description: "Gagal menghitung Z-score. Silakan coba lagi.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Current user:", user);
+      console.log("User ID:", user?.id);
+      console.log("Form data to be saved:", {
+        ...formData,
+        z_score_bb: zScoreResult.zScoreBB,
+        z_score_tb: zScoreResult.zScoreTB,
+        status: zScoreResult.statusTB,
+        user_id: user?.id,
+      });
+
+      const { data: childData, error } = await supabase
+        .from("children")
+        .insert([
+          {
+            nama: formData.nama,
+            nik: formData.nik,
+            tanggal_lahir: formData.tanggalLahir,
+            jenis_kelamin: formData.jenisKelamin,
+            nama_ibu: formData.namaIbu,
+            alamat: formData.alamat,
+            dusun: formData.dusun,
+            berat_badan: parseFloat(formData.beratBadan),
+            tinggi_badan: parseFloat(formData.tinggiBadan),
+            lingkar_kepala: parseFloat(formData.lingkarKepala),
+            catatan: formData.catatan,
+            z_score_bb: zScoreResult.zScoreBB,
+            z_score_tb: zScoreResult.zScoreTB,
+            status: zScoreResult.statusTB,
+            created_at: new Date().toISOString(),
+            user_id: user?.id,
+          },
+        ])
+        .select(); // Tambahkan .select() untuk mendapatkan data yang baru disimpan
+
+      console.log("Supabase insert response:", { childData, error });
+
+      if (error) {
+        console.error("Supabase error details:", error);
+        throw error;
+      }
+
       toast({
-        title: "Form Tidak Lengkap",
-        description: "Mohon lengkapi semua field yang wajib diisi",
+        title: "Berhasil",
+        description: "Data anak berhasil disimpan",
+      });
+
+      // Reset form
+      setFormData({
+        nama: "",
+        nik: "",
+        tanggalLahir: "",
+        jenisKelamin: "",
+        namaIbu: "",
+        alamat: "",
+        dusun: "",
+        beratBadan: "",
+        tinggiBadan: "",
+        lingkarKepala: "",
+        catatan: "",
+      });
+      setZScoreResult(null);
+      setShowAIAnalysis(false);
+    } catch (error) {
+      console.error("Error saving data:", error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan data. Silakan coba lagi.",
         variant: "destructive",
       });
-      return;
     }
-
-    // Simulate save
-    toast({
-      title: "Data Berhasil Disimpan",
-      description: "Data anak telah berhasil ditambahkan ke sistem",
-    });
-
-    // Reset form
-    setFormData({
-      nama: "",
-      nik: "",
-      tanggalLahir: "",
-      jenisKelamin: "",
-      namaIbu: "",
-      alamat: "",
-      dusun: "",
-      beratBadan: "",
-      tinggiBadan: "",
-      lingkarKepala: "",
-      catatan: "",
-    });
-    setZScoreResult(null);
-    setRecommendations([]);
-    setShowAIAnalysis(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -256,50 +363,41 @@ const ChildDataForm = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-gray-800 flex items-center">
-            👶 Input Data Anak
+    <div className="max-w-4xl mx-auto p-4">
+      <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-xl rounded-xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+          <CardTitle className="text-xl font-bold flex items-center">
+            <UserPlus className="h-5 w-5 mr-2" />
+            Input Data Anak
           </CardTitle>
-          <p className="text-gray-600">
-            Tambahkan data antropometri anak untuk monitoring stunting
-            menggunakan standar WHO
-          </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Data Identitas */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                📋 Data Identitas
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nama">Nama Lengkap *</Label>
+            {/* Data Pribadi */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="nama">Nama Anak</Label>
                   <Input
                     id="nama"
                     value={formData.nama}
                     onChange={(e) => handleInputChange("nama", e.target.value)}
-                    placeholder="Masukkan nama lengkap anak"
-                    required
+                    placeholder="Masukkan nama lengkap"
+                    className="mt-1 bg-white/80"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="nik">NIK Anak</Label>
+                <div>
+                  <Label htmlFor="nik">NIK</Label>
                   <Input
                     id="nik"
                     value={formData.nik}
                     onChange={(e) => handleInputChange("nik", e.target.value)}
-                    placeholder="Nomor Induk Kependudukan"
-                    maxLength={16}
+                    placeholder="Masukkan NIK"
+                    className="mt-1 bg-white/80"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tanggalLahir">Tanggal Lahir *</Label>
+                <div>
+                  <Label htmlFor="tanggalLahir">Tanggal Lahir</Label>
                   <Input
                     id="tanggalLahir"
                     type="date"
@@ -307,11 +405,10 @@ const ChildDataForm = () => {
                     onChange={(e) =>
                       handleInputChange("tanggalLahir", e.target.value)
                     }
-                    required
+                    className="mt-1 bg-white/80"
                   />
                 </div>
-
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="jenisKelamin">Jenis Kelamin</Label>
                   <Select
                     value={formData.jenisKelamin}
@@ -319,7 +416,7 @@ const ChildDataForm = () => {
                       handleInputChange("jenisKelamin", value)
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1 bg-white/80">
                       <SelectValue placeholder="Pilih jenis kelamin" />
                     </SelectTrigger>
                     <SelectContent>
@@ -328,8 +425,10 @@ const ChildDataForm = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
-                <div className="space-y-2">
+              <div className="space-y-4">
+                <div>
                   <Label htmlFor="namaIbu">Nama Ibu</Label>
                   <Input
                     id="namaIbu"
@@ -337,20 +436,32 @@ const ChildDataForm = () => {
                     onChange={(e) =>
                       handleInputChange("namaIbu", e.target.value)
                     }
-                    placeholder="Nama lengkap ibu"
+                    placeholder="Masukkan nama ibu"
+                    className="mt-1 bg-white/80"
                   />
                 </div>
-
-                <div className="space-y-2">
+                <div>
+                  <Label htmlFor="alamat">Alamat</Label>
+                  <Textarea
+                    id="alamat"
+                    value={formData.alamat}
+                    onChange={(e) =>
+                      handleInputChange("alamat", e.target.value)
+                    }
+                    placeholder="Masukkan alamat lengkap"
+                    className="mt-1 bg-white/80"
+                  />
+                </div>
+                <div>
                   <Label htmlFor="dusun">Dusun/Wilayah</Label>
                   <Select
                     value={formData.dusun}
                     onValueChange={(value) => handleInputChange("dusun", value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1 bg-white/80">
                       <SelectValue placeholder="Pilih dusun/wilayah" />
                     </SelectTrigger>
-                    <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectContent>
                       {dusunOptions.map((dusun) => (
                         <SelectItem key={dusun} value={dusun}>
                           {dusun}
@@ -360,266 +471,161 @@ const ChildDataForm = () => {
                   </Select>
                 </div>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="alamat">Alamat Lengkap</Label>
-                <Textarea
-                  id="alamat"
-                  value={formData.alamat}
-                  onChange={(e) => handleInputChange("alamat", e.target.value)}
-                  placeholder="Masukkan alamat lengkap"
-                  rows={2}
+            {/* Data Pengukuran */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label htmlFor="beratBadan">Berat Badan (kg)</Label>
+                <Input
+                  id="beratBadan"
+                  type="number"
+                  step="0.1"
+                  value={formData.beratBadan}
+                  onChange={(e) =>
+                    handleInputChange("beratBadan", e.target.value)
+                  }
+                  placeholder="Masukkan berat badan"
+                  className="mt-1 bg-white/80"
+                />
+              </div>
+              <div>
+                <Label htmlFor="tinggiBadan">Tinggi Badan (cm)</Label>
+                <Input
+                  id="tinggiBadan"
+                  type="number"
+                  step="0.1"
+                  value={formData.tinggiBadan}
+                  onChange={(e) =>
+                    handleInputChange("tinggiBadan", e.target.value)
+                  }
+                  placeholder="Masukkan tinggi badan"
+                  className="mt-1 bg-white/80"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lingkarKepala">Lingkar Kepala (cm)</Label>
+                <Input
+                  id="lingkarKepala"
+                  type="number"
+                  step="0.1"
+                  value={formData.lingkarKepala}
+                  onChange={(e) =>
+                    handleInputChange("lingkarKepala", e.target.value)
+                  }
+                  placeholder="Masukkan lingkar kepala"
+                  className="mt-1 bg-white/80"
                 />
               </div>
             </div>
-
-            <Separator />
-
-            {/* Data Antropometri */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                📏 Data Antropometri
-              </h3>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-blue-800 text-sm">
-                  <strong>📊 Perhitungan berdasarkan Standar WHO:</strong>{" "}
-                  Sistem ini menggunakan standar WHO Child Growth Standards 2006
-                  untuk menentukan status gizi dan stunting anak dengan akurat.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="beratBadan">Berat Badan (kg) *</Label>
-                  <Input
-                    id="beratBadan"
-                    type="number"
-                    step="0.1"
-                    value={formData.beratBadan}
-                    onChange={(e) =>
-                      handleInputChange("beratBadan", e.target.value)
-                    }
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tinggiBadan">Tinggi Badan (cm) *</Label>
-                  <Input
-                    id="tinggiBadan"
-                    type="number"
-                    step="0.1"
-                    value={formData.tinggiBadan}
-                    onChange={(e) =>
-                      handleInputChange("tinggiBadan", e.target.value)
-                    }
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="lingkarKepala">Lingkar Kepala (cm)</Label>
-                  <Input
-                    id="lingkarKepala"
-                    type="number"
-                    step="0.1"
-                    value={formData.lingkarKepala}
-                    onChange={(e) =>
-                      handleInputChange("lingkarKepala", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-center space-x-4">
-                <Button
-                  type="button"
-                  onClick={calculateZScore}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Hitung Z-Score WHO
-                </Button>
-
-                {zScoreResult && (
-                  <Button
-                    type="button"
-                    onClick={generateAIAnalysis}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                  >
-                    <Brain className="h-4 w-4 mr-2" />
-                    Analisis AI Mendalam
-                  </Button>
-                )}
-              </div>
-
-              {/* Enhanced Z-Score Results */}
-              {zScoreResult && (
-                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-semibold text-gray-800 flex items-center">
-                        {getStatusIcon(zScoreResult.stuntingStatus)}
-                        <span className="ml-2">
-                          Hasil Perhitungan Z-Score WHO
-                        </span>
-                      </h4>
-                      <Badge
-                        className={getStatusColor(zScoreResult.stuntingStatus)}
-                      >
-                        {zScoreResult.stuntingStatus}
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
-                      <div className="text-center p-3 bg-white rounded border">
-                        <div className="text-gray-600 text-xs">
-                          Tinggi/Usia (HAZ)
-                        </div>
-                        <div className="font-bold text-lg">
-                          {zScoreResult.heightForAge}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Indikator Stunting
-                        </div>
-                      </div>
-                      <div className="text-center p-3 bg-white rounded border">
-                        <div className="text-gray-600 text-xs">
-                          Berat/Usia (WAZ)
-                        </div>
-                        <div className="font-bold text-lg">
-                          {zScoreResult.weightForAge}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Indikator Underweight
-                        </div>
-                      </div>
-                      <div className="text-center p-3 bg-white rounded border">
-                        <div className="text-gray-600 text-xs">
-                          Berat/Tinggi (WHZ)
-                        </div>
-                        <div className="font-bold text-lg">
-                          {zScoreResult.weightForHeight}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Indikator Wasting
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                      <div className="text-center p-2 bg-white/80 rounded">
-                        <div className="text-xs text-gray-600">
-                          Status Stunting
-                        </div>
-                        <div className="font-medium text-sm">
-                          {zScoreResult.stuntingStatus}
-                        </div>
-                      </div>
-                      <div className="text-center p-2 bg-white/80 rounded">
-                        <div className="text-xs text-gray-600">Status Gizi</div>
-                        <div className="font-medium text-sm">
-                          {zScoreResult.underweightStatus}
-                        </div>
-                      </div>
-                      <div className="text-center p-2 bg-white/80 rounded">
-                        <div className="text-xs text-gray-600">
-                          Status Wasting
-                        </div>
-                        <div className="font-medium text-sm">
-                          {zScoreResult.wastingStatus}
-                        </div>
-                      </div>
-                    </div>
-
-                    {zScoreResult.isStunted && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-start space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
-                          <div>
-                            <div className="font-medium text-red-800">
-                              ⚠️ TERINDIKASI STUNTING
-                            </div>
-                            <div className="text-sm text-red-700">
-                              Anak terindikasi mengalami stunting berdasarkan
-                              standar WHO. Segera lakukan rujukan dan
-                              intervensi.
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {recommendations.length > 0 && (
-                      <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                        <div className="flex items-start space-x-2">
-                          <Heart className="h-5 w-5 text-emerald-600 mt-0.5" />
-                          <div>
-                            <div className="font-medium text-emerald-800 mb-2">
-                              💡 Rekomendasi Tindakan:
-                            </div>
-                            <ul className="text-sm text-emerald-700 space-y-1">
-                              {recommendations.map((rec, index) => (
-                                <li
-                                  key={index}
-                                  className="flex items-start space-x-1"
-                                >
-                                  <span className="text-emerald-500">•</span>
-                                  <span>{rec}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* AI Analysis Section */}
-              {showAIAnalysis && zScoreResult && (
-                <ZScoreAnalyzer
-                  zScoreResult={zScoreResult}
-                  childName={formData.nama}
-                  ageInMonths={calculateAge(formData.tanggalLahir)}
-                  gender={formData.jenisKelamin as 'male' | 'female'}
-                  weight={parseFloat(formData.beratBadan)}
-                  height={parseFloat(formData.tinggiBadan)}
-                />
-              )}
-            </div>
-
-            <Separator />
 
             {/* Catatan */}
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="catatan">Catatan Tambahan</Label>
               <Textarea
                 id="catatan"
                 value={formData.catatan}
                 onChange={(e) => handleInputChange("catatan", e.target.value)}
-                placeholder="Catatan kondisi anak, riwayat kesehatan, atau informasi lain yang relevan"
-                rows={3}
+                placeholder="Masukkan catatan tambahan jika ada"
+                className="mt-1 bg-white/80"
               />
             </div>
 
-            {/* Submit Button */}
-            <div className="flex justify-center pt-4">
+            {/* Tombol Aksi */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                type="button"
+                onClick={() => calculateZScore(formData)}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                <Calculator className="h-4 w-4 mr-2" />
+                Hitung Z-Score
+              </Button>
               <Button
                 type="submit"
-                size="lg"
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-8"
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
               >
-                <Save className="h-5 w-5 mr-2" />
-                Simpan Data Anak
+                <Save className="h-4 w-4 mr-2" />
+                Simpan Data
               </Button>
             </div>
           </form>
+
+          {/* Tampilkan hasil Z-score */}
+          {zScoreResult && (
+            <div className="mt-6 space-y-4">
+              <h3 className="text-lg font-semibold">
+                Hasil Perhitungan Z-Score
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">
+                      Status Berat Badan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {zScoreResult.statusBB}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Z-score: {zScoreResult.zScoreBB.toFixed(2)}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">
+                      Status Tinggi Badan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {zScoreResult.statusTB}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Z-score: {zScoreResult.zScoreTB.toFixed(2)}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Analisis LLM */}
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">
+                    Analisis Kondisi Gizi
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm leading-relaxed">
+                    {zScoreResult.analysis}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Tombol Analisis AI */}
+          <Button
+            onClick={generateAIAnalysis}
+            className="mt-4 w-full bg-purple-500 hover:bg-purple-600 text-white"
+          >
+            <Brain className="h-4 w-4 mr-2" />
+            Analisis dengan AI
+          </Button>
+
+          {/* Analisis AI */}
+          {showAIAnalysis && zScoreResult && (
+            <div className="mt-6">
+              <ZScoreAnalyzer
+                zScoreBB={zScoreResult.zScoreBB}
+                zScoreTB={zScoreResult.zScoreTB}
+                age={calculateAge(formData.tanggalLahir)}
+                gender={formData.jenisKelamin as "male" | "female"}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

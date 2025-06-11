@@ -1,34 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useAuth } from '@/hooks/useAuth';
-import Navigation from '@/components/Navigation';
-import DashboardStats from '@/components/dashboard/DashboardStats';
-import VillageList from '@/components/village/VillageList';
-import ChildDataForm from '@/components/forms/ChildDataForm';
-import NotificationPanel from '@/components/notifications/NotificationPanel';
-import ParentDashboard from '@/components/dashboard/ParentDashboard';
-import ProfileEdit from '@/components/profile/ProfileEdit';
-import ProfileView from '@/components/profile/ProfileView';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Users, TrendingUp, AlertTriangle, LogOut, Settings, Download, FileText, BarChart, Eye } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
+import Navigation from "@/components/Navigation";
+import DashboardStats from "@/components/dashboard/DashboardStats";
+import VillageList from "@/components/village/VillageList";
+import ChildDataForm from "@/components/forms/ChildDataForm";
+import NotificationPanel from "@/components/notifications/NotificationPanel";
+import ParentDashboard from "@/components/dashboard/ParentDashboard";
+import ProfileEdit from "@/components/profile/ProfileEdit";
+import ProfileView from "@/components/profile/ProfileView";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  MapPin,
+  Users,
+  TrendingUp,
+  AlertTriangle,
+  LogOut,
+  Settings,
+  Download,
+  FileText,
+  BarChart,
+  Eye,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { user, profile, signOut, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showProfileView, setShowProfileView] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
     totalChildren: 0,
     stuntingCases: 0,
     villages: 15,
-    trend: -5
+    trend: -5,
   });
 
   useEffect(() => {
@@ -39,23 +50,26 @@ const Index = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const { data: children } = await supabase
-        .from('children')
-        .select('id, is_stunted');
-      
+      const { data: children, error } = await supabase
+        .from("children")
+        .select("id, status");
+
       if (children) {
         const totalChildren = children.length;
-        const stuntingCases = children.filter(child => child.is_stunted).length;
-        
+        const stuntingCases = children.filter(
+          (child) =>
+            child.status === "Stunting" || child.status === "Stunting Berat"
+        ).length;
+
         setDashboardStats({
           totalChildren,
           stuntingCases,
           villages: 15,
-          trend: -5
+          trend: -5,
         });
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error("Error fetching dashboard stats:", error);
     }
   };
 
@@ -90,7 +104,7 @@ const Index = () => {
   }
 
   // Parent Dashboard
-  if (profile?.role === 'parent') {
+  if (profile?.role === "parent") {
     if (showProfileEdit) {
       return (
         <ProfileEdit
@@ -136,7 +150,11 @@ const Index = () => {
   }
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
   return (
@@ -158,12 +176,14 @@ const Index = () => {
                 <Avatar className="w-10 h-10">
                   <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback className="bg-white text-emerald-600 font-medium">
-                    {getInitials(profile?.nama || 'U')}
+                    {getInitials(profile?.nama || "U")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="text-sm font-medium">{profile?.nama}</p>
-                  <p className="text-xs text-emerald-100">{profile?.puskesmas}</p>
+                  <p className="text-xs text-emerald-100">
+                    {profile?.puskesmas}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -204,7 +224,11 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsContent value="dashboard" className="space-y-6">
             {/* Quick Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -216,10 +240,10 @@ const Index = () => {
                   <Users className="h-5 w-5 text-blue-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{dashboardStats.totalChildren}</div>
-                  <p className="text-xs text-green-600 mt-1">
-                    Data real-time
-                  </p>
+                  <div className="text-3xl font-bold text-gray-900">
+                    {dashboardStats.totalChildren}
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">Data real-time</p>
                 </CardContent>
               </Card>
 
@@ -231,9 +255,18 @@ const Index = () => {
                   <AlertTriangle className="h-5 w-5 text-red-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-red-600">{dashboardStats.stuntingCases}</div>
+                  <div className="text-3xl font-bold text-red-600">
+                    {dashboardStats.stuntingCases}
+                  </div>
                   <p className="text-xs text-red-500 mt-1">
-                    {dashboardStats.totalChildren > 0 ? ((dashboardStats.stuntingCases / dashboardStats.totalChildren) * 100).toFixed(1) : 0}% dari total anak
+                    {dashboardStats.totalChildren > 0
+                      ? (
+                          (dashboardStats.stuntingCases /
+                            dashboardStats.totalChildren) *
+                          100
+                        ).toFixed(1)
+                      : 0}
+                    % dari total anak
                   </p>
                 </CardContent>
               </Card>
@@ -290,42 +323,43 @@ const Index = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <p className="text-gray-600 mb-4">
-                  Fitur laporan dan analisis untuk Kabupaten Minahasa Utara. 
-                  Anda dapat mengunduh laporan bulanan, statistik per desa, 
-                  dan analisis tren stunting.
+                  Fitur laporan dan analisis untuk Kabupaten Minahasa Utara.
+                  Anda dapat mengunduh laporan bulanan, statistik per desa, dan
+                  analisis tren stunting.
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Button 
-                    onClick={() => handleDownloadReport('Bulanan')}
+                  <Button
+                    onClick={() => handleDownloadReport("Bulanan")}
                     className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                   >
                     <Download className="h-6 w-6" />
                     <span>Laporan Bulanan</span>
                   </Button>
-                  
-                  <Button 
-                    onClick={() => handleDownloadReport('Per Desa')}
+
+                  <Button
+                    onClick={() => handleDownloadReport("Per Desa")}
                     className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
                   >
                     <FileText className="h-6 w-6" />
                     <span>Laporan Per Desa</span>
                   </Button>
-                  
-                  <Button 
-                    onClick={() => handleDownloadReport('Analisis Tren')}
+
+                  <Button
+                    onClick={() => handleDownloadReport("Analisis Tren")}
                     className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                   >
                     <BarChart className="h-6 w-6" />
                     <span>Analisis Tren</span>
                   </Button>
                 </div>
-                
+
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-yellow-800 text-sm">
-                    <strong>Catatan:</strong> Untuk menyimpan data anak yang baru didaftarkan 
-                    secara permanen dan mengakses fitur laporan lengkap, sistem memerlukan 
-                    koneksi database. Saat ini data hanya tersimpan sementara di browser.
+                    <strong>Catatan:</strong> Untuk menyimpan data anak yang
+                    baru didaftarkan secara permanen dan mengakses fitur laporan
+                    lengkap, sistem memerlukan koneksi database. Saat ini data
+                    hanya tersimpan sementara di browser.
                   </p>
                 </div>
               </CardContent>
