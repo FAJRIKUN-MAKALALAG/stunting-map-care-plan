@@ -1,107 +1,73 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import VillageList from '@/components/village/VillageList';
 import ChildDataForm from '@/components/forms/ChildDataForm';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
-import LoginForm from '@/components/auth/LoginForm';
-import ParentLoginForm from '@/components/auth/ParentLoginForm';
-import RegisterForm from '@/components/auth/RegisterForm';
+import ParentDashboard from '@/components/dashboard/ParentDashboard';
 import ProfileEdit from '@/components/profile/ProfileEdit';
 import ProfileView from '@/components/profile/ProfileView';
-import ParentDashboard from '@/components/dashboard/ParentDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Users, TrendingUp, AlertTriangle, User, LogOut, Settings, Download, FileText, BarChart, Eye } from 'lucide-react';
+import { MapPin, Users, TrendingUp, AlertTriangle, LogOut, Settings, Download, FileText, BarChart, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { user, profile, signOut, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<'doctor' | 'parent'>('doctor');
-  const [authMode, setAuthMode] = useState<'login' | 'register' | 'parent-login'>('login');
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showProfileView, setShowProfileView] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalChildren: 0,
+    stuntingCases: 0,
+    villages: 15,
+    trend: -5
+  });
 
-  const handleLogin = (email: string, password: string) => {
-    const userData = {
-      nama: 'Dr. Sarah Mandagi',
-      email: email,
-      nip: '198505152010012001',
-      telefon: '081234567890',
-      puskesmas: 'Puskesmas Airmadidi',
-      wilayahKerja: 'Kecamatan Airmadidi',
-      spesialisasi: 'Dokter Umum',
-      avatar: ''
-    };
-    setCurrentUser(userData);
-    setIsLoggedIn(true);
-    setUserRole('doctor');
-    toast({
-      title: "Login Berhasil",
-      description: `Selamat datang, ${userData.nama}!`,
-    });
+  useEffect(() => {
+    if (user) {
+      fetchDashboardStats();
+    }
+  }, [user]);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const { data: children } = await supabase
+        .from('children')
+        .select('id, is_stunted');
+      
+      if (children) {
+        const totalChildren = children.length;
+        const stuntingCases = children.filter(child => child.is_stunted).length;
+        
+        setDashboardStats({
+          totalChildren,
+          stuntingCases,
+          villages: 15,
+          trend: -5
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
   };
 
-  const handleParentLogin = (email: string, password: string, role: 'parent') => {
-    const userData = {
-      nama: 'Bapak Mandagi',
-      email: email,
-      telefon: '081234567890',
-      alamat: 'Airmadidi Bawah, Minahasa Utara',
-      avatar: ''
-    };
-    setCurrentUser(userData);
-    setIsLoggedIn(true);
-    setUserRole('parent');
-    toast({
-      title: "Login Berhasil",
-      description: `Selamat datang, ${userData.nama}!`,
-    });
-  };
-
-  const handleRegister = (userData: any) => {
-    setCurrentUser(userData);
-    setIsLoggedIn(true);
-    setUserRole('doctor');
-    toast({
-      title: "Registrasi Berhasil",
-      description: "Akun Anda telah berhasil dibuat!",
-    });
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    setUserRole('doctor');
-    setActiveTab('dashboard');
-    setShowProfileView(false);
-    setShowProfileEdit(false);
-    setAuthMode('login');
+  const handleLogout = async () => {
+    await signOut();
     toast({
       title: "Logout Berhasil",
       description: "Anda telah keluar dari sistem",
     });
   };
 
-  const handleProfileSave = (profileData: any) => {
-    setCurrentUser(profileData);
-    setShowProfileEdit(false);
-    toast({
-      title: "Profil Diperbarui",
-      description: "Data profil Anda telah berhasil disimpan",
-    });
-  };
-
-  const handleProfileUpdate = (updatedUser: any) => {
-    setCurrentUser(updatedUser);
+  const handleProfileUpdate = (updatedProfile: any) => {
     toast({
       title: "Profil Diperbarui",
       description: "Data profil Anda telah berhasil disimpan",
@@ -115,39 +81,21 @@ const Index = () => {
     });
   };
 
-  if (!isLoggedIn) {
-    if (authMode === 'login') {
-      return (
-        <LoginForm 
-          onLogin={handleLogin}
-          onSwitchToRegister={() => setAuthMode('register')}
-          onSwitchToParent={() => setAuthMode('parent-login')}
-        />
-      );
-    } else if (authMode === 'parent-login') {
-      return (
-        <ParentLoginForm 
-          onLogin={handleParentLogin}
-          onSwitchToDoctor={() => setAuthMode('login')}
-        />
-      );
-    } else {
-      return (
-        <RegisterForm 
-          onRegister={handleRegister}
-          onSwitchToLogin={() => setAuthMode('login')}
-        />
-      );
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-600"></div>
+      </div>
+    );
   }
 
   // Parent Dashboard
-  if (userRole === 'parent') {
+  if (profile?.role === 'parent') {
     if (showProfileEdit) {
       return (
         <ProfileEdit
-          initialData={currentUser}
-          onSave={handleProfileSave}
+          initialData={profile}
+          onSave={() => setShowProfileEdit(false)}
           onCancel={() => setShowProfileEdit(false)}
         />
       );
@@ -156,7 +104,7 @@ const Index = () => {
     if (showProfileView) {
       return (
         <ProfileView
-          user={currentUser}
+          user={profile}
           onUpdateProfile={handleProfileUpdate}
           onClose={() => setShowProfileView(false)}
         />
@@ -166,12 +114,12 @@ const Index = () => {
     return <ParentDashboard />;
   }
 
-  // Doctor Dashboard (existing code)
+  // Doctor Dashboard
   if (showProfileEdit) {
     return (
       <ProfileEdit
-        initialData={currentUser}
-        onSave={handleProfileSave}
+        initialData={profile}
+        onSave={() => setShowProfileEdit(false)}
         onCancel={() => setShowProfileEdit(false)}
       />
     );
@@ -180,7 +128,7 @@ const Index = () => {
   if (showProfileView) {
     return (
       <ProfileView
-        user={currentUser}
+        user={profile}
         onUpdateProfile={handleProfileUpdate}
         onClose={() => setShowProfileView(false)}
       />
@@ -208,14 +156,14 @@ const Index = () => {
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-3 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
                 <Avatar className="w-10 h-10">
-                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback className="bg-white text-emerald-600 font-medium">
-                    {getInitials(currentUser?.nama || 'U')}
+                    {getInitials(profile?.nama || 'U')}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium">{currentUser?.nama}</p>
-                  <p className="text-xs text-emerald-100">{currentUser?.puskesmas}</p>
+                  <p className="text-sm font-medium">{profile?.nama}</p>
+                  <p className="text-xs text-emerald-100">{profile?.puskesmas}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -268,9 +216,9 @@ const Index = () => {
                   <Users className="h-5 w-5 text-blue-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">2,847</div>
+                  <div className="text-3xl font-bold text-gray-900">{dashboardStats.totalChildren}</div>
                   <p className="text-xs text-green-600 mt-1">
-                    +8% dari bulan lalu
+                    Data real-time
                   </p>
                 </CardContent>
               </Card>
@@ -283,9 +231,9 @@ const Index = () => {
                   <AlertTriangle className="h-5 w-5 text-red-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-red-600">198</div>
+                  <div className="text-3xl font-bold text-red-600">{dashboardStats.stuntingCases}</div>
                   <p className="text-xs text-red-500 mt-1">
-                    7.0% dari total anak
+                    {dashboardStats.totalChildren > 0 ? ((dashboardStats.stuntingCases / dashboardStats.totalChildren) * 100).toFixed(1) : 0}% dari total anak
                   </p>
                 </CardContent>
               </Card>

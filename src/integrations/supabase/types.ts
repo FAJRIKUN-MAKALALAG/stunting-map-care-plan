@@ -9,7 +9,150 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      children: {
+        Row: {
+          alamat: string | null
+          berat_badan: number
+          catatan: string | null
+          created_at: string | null
+          dusun: string | null
+          id: string
+          is_stunted: boolean | null
+          jenis_kelamin: string
+          lingkar_kepala: number | null
+          nama: string
+          nama_ibu: string | null
+          nik: string | null
+          status_gizi: string | null
+          tanggal_lahir: string
+          tinggi_badan: number
+          updated_at: string | null
+          user_id: string
+          z_score_haz: number | null
+          z_score_waz: number | null
+          z_score_whz: number | null
+        }
+        Insert: {
+          alamat?: string | null
+          berat_badan: number
+          catatan?: string | null
+          created_at?: string | null
+          dusun?: string | null
+          id?: string
+          is_stunted?: boolean | null
+          jenis_kelamin: string
+          lingkar_kepala?: number | null
+          nama: string
+          nama_ibu?: string | null
+          nik?: string | null
+          status_gizi?: string | null
+          tanggal_lahir: string
+          tinggi_badan: number
+          updated_at?: string | null
+          user_id: string
+          z_score_haz?: number | null
+          z_score_waz?: number | null
+          z_score_whz?: number | null
+        }
+        Update: {
+          alamat?: string | null
+          berat_badan?: number
+          catatan?: string | null
+          created_at?: string | null
+          dusun?: string | null
+          id?: string
+          is_stunted?: boolean | null
+          jenis_kelamin?: string
+          lingkar_kepala?: number | null
+          nama?: string
+          nama_ibu?: string | null
+          nik?: string | null
+          status_gizi?: string | null
+          tanggal_lahir?: string
+          tinggi_badan?: number
+          updated_at?: string | null
+          user_id?: string
+          z_score_haz?: number | null
+          z_score_waz?: number | null
+          z_score_whz?: number | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          id: string
+          nama: string
+          nip: string | null
+          puskesmas: string | null
+          role: string | null
+          spesialisasi: string | null
+          telefon: string | null
+          updated_at: string | null
+          wilayah_kerja: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          id: string
+          nama: string
+          nip?: string | null
+          puskesmas?: string | null
+          role?: string | null
+          spesialisasi?: string | null
+          telefon?: string | null
+          updated_at?: string | null
+          wilayah_kerja?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          nama?: string
+          nip?: string | null
+          puskesmas?: string | null
+          role?: string | null
+          spesialisasi?: string | null
+          telefon?: string | null
+          updated_at?: string | null
+          wilayah_kerja?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
