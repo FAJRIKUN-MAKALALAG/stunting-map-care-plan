@@ -104,7 +104,7 @@ const ChatbotGizi: React.FC<ChatbotGiziProps> = ({ onClose }) => {
                 className={`flex items-start space-x-2 max-w-[80%] ${
                   message.role === "user"
                     ? "flex-row-reverse space-x-reverse"
-                    : ""
+                    : "flex-row"
                 }`}
               >
                 <div
@@ -127,7 +127,11 @@ const ChatbotGizi: React.FC<ChatbotGiziProps> = ({ onClose }) => {
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">
+                  <p
+                    className={`text-sm whitespace-pre-wrap ${
+                      message.role === "user" ? "text-right" : "text-left"
+                    }`}
+                  >
                     {message.content}
                   </p>
                   <span
