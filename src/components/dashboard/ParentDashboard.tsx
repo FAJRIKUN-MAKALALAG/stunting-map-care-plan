@@ -154,7 +154,7 @@ const ParentDashboard: React.FC = () => {
         title: "Berhasil",
         description: "Anda telah keluar dari sistem",
       });
-      window.location.href = "/login";
+      navigate("/auth");
     } catch (error) {
       console.error("Logout error:", error);
       toast({

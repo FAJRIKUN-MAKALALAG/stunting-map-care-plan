@@ -24,10 +24,12 @@ import {
   FileText,
   BarChart,
   Eye,
+  MessageCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ReportPanel from "@/components/reports/ReportPanel";
+import DoctorList from "@/components/dashboard/DoctorList";
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -308,6 +310,20 @@ const Index = () => {
 
           <TabsContent value="laporan" className="space-y-6">
             <ReportPanel />
+          </TabsContent>
+
+          <TabsContent value="chatbot" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <MessageCircle className="h-5 w-5 text-emerald-600" />
+                  <span>Konsultasi dengan Dokter</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DoctorList />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
