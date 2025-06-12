@@ -1,11 +1,11 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Mail, Phone, MapPin, Camera, Save, X } from 'lucide-react';
+import React, { useState, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, Mail, Phone, MapPin, Camera, Save, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileEditProps {
   onSave: (profileData: any) => void;
@@ -14,35 +14,75 @@ interface ProfileEditProps {
 }
 
 const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileData, setProfileData] = useState({
-    nama: initialData?.nama || 'Dr. Sarah Mandagi',
-    email: initialData?.email || 'sarah.mandagi@puskesmas.go.id',
-    nip: initialData?.nip || '198505152010012001',
-    telefon: initialData?.telefon || '081234567890',
-    puskesmas: initialData?.puskesmas || 'Puskesmas Airmadidi',
-    wilayahKerja: initialData?.wilayahKerja || 'Kecamatan Airmadidi',
-    spesialisasi: initialData?.spesialisasi || 'Dokter Umum',
-    avatar: initialData?.avatar || ''
+    nama: initialData?.nama || "Dr. Sarah Mandagi",
+    email: initialData?.email || "sarah.mandagi@puskesmas.go.id",
+    nip: initialData?.nip || "198505152010012001",
+    telefon: initialData?.telefon || "081234567890",
+    puskesmas: initialData?.puskesmas || "Puskesmas Airmadidi",
+    wilayahKerja: initialData?.wilayahKerja || "Kecamatan Airmadidi",
+    spesialisasi: initialData?.spesialisasi || "Dokter Umum",
+    avatar: initialData?.avatar || "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(initialData?.avatar || "");
 
   const handleInputChange = (field: string, value: string) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
+    setProfileData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validasi tipe file
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Error",
+          description: "File harus berupa gambar",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validasi ukuran file (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Ukuran file maksimal 2MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setAvatarPreview(result);
+        setProfileData((prev) => ({ ...prev, avatar: result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     onSave(profileData);
     setIsLoading(false);
   };
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
   return (
@@ -54,21 +94,29 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
             <span>Edit Profile Dokter</span>
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Avatar Section */}
             <div className="flex justify-center mb-6">
-              <div className="relative">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={profileData.avatar} />
+              <div className="relative group">
+                <Avatar className="w-24 h-24 ring-4 ring-white shadow-lg">
+                  <AvatarImage src={avatarPreview} />
                   <AvatarFallback className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xl">
                     {getInitials(profileData.nama)}
                   </AvatarFallback>
                 </Avatar>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
                 <button
                   type="button"
-                  className="absolute bottom-0 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 shadow-lg transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 shadow-lg transition-colors group-hover:scale-110"
                 >
                   <Camera className="h-4 w-4" />
                 </button>
@@ -77,7 +125,10 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="nama" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="nama"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Nama Lengkap
                 </Label>
                 <div className="relative">
@@ -86,7 +137,7 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
                     id="nama"
                     type="text"
                     value={profileData.nama}
-                    onChange={(e) => handleInputChange('nama', e.target.value)}
+                    onChange={(e) => handleInputChange("nama", e.target.value)}
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -94,7 +145,10 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="nip" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="nip"
+                  className="text-sm font-medium text-gray-700"
+                >
                   NIP
                 </Label>
                 <div className="relative">
@@ -103,7 +157,7 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
                     id="nip"
                     type="text"
                     value={profileData.nip}
-                    onChange={(e) => handleInputChange('nip', e.target.value)}
+                    onChange={(e) => handleInputChange("nip", e.target.value)}
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -111,7 +165,10 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Email
                 </Label>
                 <div className="relative">
@@ -120,7 +177,7 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
                     id="email"
                     type="email"
                     value={profileData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -128,7 +185,10 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="telefon" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="telefon"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Nomor Telepon
                 </Label>
                 <div className="relative">
@@ -137,7 +197,9 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
                     id="telefon"
                     type="tel"
                     value={profileData.telefon}
-                    onChange={(e) => handleInputChange('telefon', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("telefon", e.target.value)
+                    }
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -145,7 +207,10 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="puskesmas" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="puskesmas"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Puskesmas
                 </Label>
                 <div className="relative">
@@ -154,7 +219,9 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
                     id="puskesmas"
                     type="text"
                     value={profileData.puskesmas}
-                    onChange={(e) => handleInputChange('puskesmas', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("puskesmas", e.target.value)
+                    }
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -162,7 +229,10 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="spesialisasi" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="spesialisasi"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Spesialisasi
                 </Label>
                 <div className="relative">
@@ -171,7 +241,9 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
                     id="spesialisasi"
                     type="text"
                     value={profileData.spesialisasi}
-                    onChange={(e) => handleInputChange('spesialisasi', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("spesialisasi", e.target.value)
+                    }
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -180,7 +252,10 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="wilayahKerja" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="wilayahKerja"
+                className="text-sm font-medium text-gray-700"
+              >
                 Wilayah Kerja
               </Label>
               <div className="relative">
@@ -189,7 +264,9 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
                   id="wilayahKerja"
                   type="text"
                   value={profileData.wilayahKerja}
-                  onChange={(e) => handleInputChange('wilayahKerja', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("wilayahKerja", e.target.value)
+                  }
                   className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                   required
                 />
