@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,16 +11,14 @@ import {
   Heart,
   Stethoscope,
   Shield,
-  Baby,
 } from "lucide-react";
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => void;
   onSwitchToRegister: () => void;
-  onSwitchToParent: () => void;
 }
 
-const LoginForm = ({ onLogin, onSwitchToRegister, onSwitchToParent }: LoginFormProps) => {
+const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,28 +36,26 @@ const LoginForm = ({ onLogin, onSwitchToRegister, onSwitchToParent }: LoginFormP
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 relative overflow-hidden">
+    <div className="h-screen w-screen bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-pink-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-20 w-32 h-32 bg-red-200/30 rounded-full blur-3xl"></div>
         <div className="absolute top-40 right-32 w-24 h-24 bg-rose-200/40 rounded-full blur-2xl"></div>
         <div className="absolute bottom-32 left-1/4 w-40 h-40 bg-pink-200/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 right-20 w-28 h-28 bg-rose-300/25 rounded-full blur-2xl"></div>
       </div>
 
-      <div className="relative flex items-center justify-center min-h-screen p-4">
-        <Card className="w-full max-w-md bg-white/95 backdrop-blur-xl border-0 shadow-2xl shadow-pink-500/10">
+      <div className="relative flex items-center justify-center h-full p-4">
+        <Card className="w-full max-w-md bg-white/95 backdrop-blur-xl border-0 shadow-xl shadow-pink-500/10">
           <CardHeader className="text-center pb-8 pt-8">
-            {/* Logo/Icon Section */}
             <div className="mx-auto w-20 h-20 bg-gradient-to-br from-pink-600 via-rose-600 to-pink-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
               <div className="relative">
                 <Heart className="h-10 w-10 text-white" />
                 <Stethoscope className="h-6 w-6 text-white/80 absolute -bottom-1 -right-1" />
               </div>
             </div>
-
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-              Portal Tenaga Kesehatan
+              Selamat Datang
             </CardTitle>
             <p className="text-gray-600 mt-3 text-lg">
               Sistem Pemetaan & Penanggulangan Stunting
@@ -90,7 +85,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister, onSwitchToParent }: LoginFormP
                     placeholder="dokter@puskesmas.go.id"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-12 h-14 border-2 border-gray-200 focus:border-pink-500 focus:ring-pink-500/20 rounded-xl text-base transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                    className="pl-12 h-14 border-none focus:ring-2 focus:ring-pink-400 rounded-xl text-base transition-all duration-300 bg-white/70 backdrop-blur-sm shadow-md"
                     required
                   />
                 </div>
@@ -111,7 +106,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister, onSwitchToParent }: LoginFormP
                     placeholder="Masukkan password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-12 pr-12 h-14 border-2 border-gray-200 focus:border-pink-500 focus:ring-pink-500/20 rounded-xl text-base transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                    className="pl-12 pr-12 h-14 border-none focus:ring-2 focus:ring-pink-400 rounded-xl text-base transition-all duration-300 bg-white/70 backdrop-blur-sm shadow-md"
                     required
                   />
                   <button
@@ -145,7 +140,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister, onSwitchToParent }: LoginFormP
                 </Button>
               </div>
 
-              <div className="text-center pt-4 space-y-3">
+              <div className="text-center pt-4">
                 <p className="text-gray-600">
                   Belum punya akun?{" "}
                   <button
@@ -156,24 +151,8 @@ const LoginForm = ({ onLogin, onSwitchToRegister, onSwitchToParent }: LoginFormP
                     Daftar sekarang
                   </button>
                 </p>
-                
-                <div className="flex items-center">
-                  <div className="flex-1 border-t border-gray-300"></div>
-                  <span className="px-4 text-sm text-gray-500">atau</span>
-                  <div className="flex-1 border-t border-gray-300"></div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onSwitchToParent}
-                  className="w-full py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl text-blue-700 font-medium hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 flex items-center justify-center space-x-2"
-                >
-                  <Baby className="h-5 w-5" />
-                  <span>Login sebagai Orang Tua</span>
-                </button>
               </div>
 
-              {/* Quick access for demo */}
               <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-xl p-4 mt-6">
                 <p className="text-pink-800 text-sm text-center">
                   <strong>Demo:</strong> Gunakan email dan password apa saja
