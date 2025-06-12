@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import ReportPanel from "@/components/reports/ReportPanel";
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -306,55 +307,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="laporan" className="space-y-6">
-            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-800">
-                  📊 Laporan & Analisis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <p className="text-gray-600 mb-4">
-                  Fitur laporan dan analisis untuk Kabupaten Minahasa Utara.
-                  Anda dapat mengunduh laporan bulanan, statistik per desa, dan
-                  analisis tren stunting.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Button
-                    onClick={() => handleDownloadReport("Bulanan")}
-                    className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  >
-                    <Download className="h-6 w-6" />
-                    <span>Laporan Bulanan</span>
-                  </Button>
-
-                  <Button
-                    onClick={() => handleDownloadReport("Per Desa")}
-                    className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-                  >
-                    <FileText className="h-6 w-6" />
-                    <span>Laporan Per Desa</span>
-                  </Button>
-
-                  <Button
-                    onClick={() => handleDownloadReport("Analisis Tren")}
-                    className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                  >
-                    <BarChart className="h-6 w-6" />
-                    <span>Analisis Tren</span>
-                  </Button>
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-yellow-800 text-sm">
-                    <strong>Catatan:</strong> Untuk menyimpan data anak yang
-                    baru didaftarkan secara permanen dan mengakses fitur laporan
-                    lengkap, sistem memerlukan koneksi database. Saat ini data
-                    hanya tersimpan sementara di browser.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <ReportPanel />
           </TabsContent>
         </Tabs>
       </div>
