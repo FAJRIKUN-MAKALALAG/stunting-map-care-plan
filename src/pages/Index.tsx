@@ -190,15 +190,6 @@ const Index = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowProfileView(true)}
-                  className="text-white hover:bg-white/20"
-                  title="Lihat Profile"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
                   onClick={() => setShowProfileEdit(true)}
                   className="text-white hover:bg-white/20"
                   title="Edit Profile"
