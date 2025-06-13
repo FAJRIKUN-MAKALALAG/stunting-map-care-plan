@@ -1,38 +1,43 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Heart, Stethoscope, Baby, Shield } from 'lucide-react';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff, Heart, Stethoscope, Baby, Shield } from "lucide-react";
 
 const AuthPage = () => {
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Login form state
   const [loginData, setLoginData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
 
   // Register form state
   const [registerData, setRegisterData] = useState({
-    email: '',
-    password: '',
-    nama: '',
-    role: 'doctor' as 'doctor' | 'parent',
-    nip: '',
-    telefon: '',
-    puskesmas: '',
-    wilayah_kerja: '',
-    spesialisasi: 'Dokter Umum'
+    email: "",
+    password: "",
+    nama: "",
+    role: "doctor" as "doctor" | "parent",
+    nip: "",
+    telefon: "",
+    puskesmas: "",
+    wilayah_kerja: "",
+    spesialisasi: "Dokter Umum",
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -40,20 +45,20 @@ const AuthPage = () => {
     setLoading(true);
 
     const { error } = await signIn(loginData.email, loginData.password);
-    
+
     if (error) {
       toast({
         title: "Error Login",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } else {
       toast({
         title: "Login Berhasil",
-        description: "Selamat datang di sistem!"
+        description: "Selamat datang di sistem!",
       });
     }
-    
+
     setLoading(false);
   };
 
@@ -68,22 +73,22 @@ const AuthPage = () => {
       telefon: registerData.telefon || undefined,
       puskesmas: registerData.puskesmas || undefined,
       wilayah_kerja: registerData.wilayah_kerja || undefined,
-      spesialisasi: registerData.spesialisasi
+      spesialisasi: registerData.spesialisasi,
     });
 
     if (error) {
       toast({
         title: "Error Registrasi",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } else {
       toast({
         title: "Registrasi Berhasil",
-        description: "Silakan check email untuk verifikasi akun"
+        description: "Silakan check email untuk verifikasi akun",
       });
     }
-    
+
     setLoading(false);
   };
 
@@ -117,7 +122,9 @@ const AuthPage = () => {
                       type="email"
                       placeholder="email@example.com"
                       value={loginData.email}
-                      onChange={(e) => setLoginData({...loginData, email: e.target.value})}
+                      onChange={(e) =>
+                        setLoginData({ ...loginData, email: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -130,7 +137,12 @@ const AuthPage = () => {
                         type={showPassword ? "text" : "password"}
                         placeholder="Masukkan password"
                         value={loginData.password}
-                        onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                        onChange={(e) =>
+                          setLoginData({
+                            ...loginData,
+                            password: e.target.value,
+                          })
+                        }
                         required
                       />
                       <button
@@ -138,13 +150,17 @@ const AuthPage = () => {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2"
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-emerald-600 hover:bg-emerald-700"
                     disabled={loading}
                   >
@@ -161,14 +177,24 @@ const AuthPage = () => {
                       id="nama"
                       placeholder="Nama lengkap"
                       value={registerData.nama}
-                      onChange={(e) => setRegisterData({...registerData, nama: e.target.value})}
+                      onChange={(e) =>
+                        setRegisterData({
+                          ...registerData,
+                          nama: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Select value={registerData.role} onValueChange={(value: 'doctor' | 'parent') => setRegisterData({...registerData, role: value})}>
+                    <Select
+                      value={registerData.role}
+                      onValueChange={(value: "doctor" | "parent") =>
+                        setRegisterData({ ...registerData, role: value })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -186,7 +212,12 @@ const AuthPage = () => {
                       type="email"
                       placeholder="email@example.com"
                       value={registerData.email}
-                      onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                      onChange={(e) =>
+                        setRegisterData({
+                          ...registerData,
+                          email: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
@@ -198,13 +229,18 @@ const AuthPage = () => {
                       type="password"
                       placeholder="Minimal 6 karakter"
                       value={registerData.password}
-                      onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                      onChange={(e) =>
+                        setRegisterData({
+                          ...registerData,
+                          password: e.target.value,
+                        })
+                      }
                       required
                       minLength={6}
                     />
                   </div>
 
-                  {registerData.role === 'doctor' && (
+                  {registerData.role === "doctor" && (
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="nip">NIP (Opsional)</Label>
@@ -212,7 +248,12 @@ const AuthPage = () => {
                           id="nip"
                           placeholder="Nomor Induk Pegawai"
                           value={registerData.nip}
-                          onChange={(e) => setRegisterData({...registerData, nip: e.target.value})}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              nip: e.target.value,
+                            })
+                          }
                         />
                       </div>
 
@@ -222,24 +263,34 @@ const AuthPage = () => {
                           id="puskesmas"
                           placeholder="Nama Puskesmas"
                           value={registerData.puskesmas}
-                          onChange={(e) => setRegisterData({...registerData, puskesmas: e.target.value})}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              puskesmas: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="telefon">No. Telepon</Label>
+                        <Input
+                          id="telefon"
+                          placeholder="Nomor telepon"
+                          value={registerData.telefon}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              telefon: e.target.value,
+                            })
+                          }
                         />
                       </div>
                     </>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="telefon">No. Telepon</Label>
-                    <Input
-                      id="telefon"
-                      placeholder="Nomor telepon"
-                      value={registerData.telefon}
-                      onChange={(e) => setRegisterData({...registerData, telefon: e.target.value})}
-                    />
-                  </div>
-
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-emerald-600 hover:bg-emerald-700"
                     disabled={loading}
                   >

@@ -8,7 +8,7 @@ CREATE TABLE public.profiles (
   telefon TEXT,
   puskesmas TEXT,
   wilayah_kerja TEXT,
-  spesialisasi TEXT DEFAULT 'Dokter Umum',
+  spesialisasi TEXT DEFAULT 'Dokter Umum' CHECK (role IN ('doctor', 'parent')),
   avatar_url TEXT,
   role TEXT DEFAULT 'doctor' CHECK (role IN ('doctor', 'parent')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
