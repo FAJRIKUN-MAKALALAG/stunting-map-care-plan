@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Mail, Phone, MapPin, Camera, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ProfileEditProps {
   onSave: (profileData: any) => void;
@@ -16,6 +17,7 @@ interface ProfileEditProps {
 const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { updateProfile, profile } = useAuth();
   const [profileData, setProfileData] = useState({
     nama: initialData?.nama || "Dr. Sarah Mandagi",
     email: initialData?.email || "sarah.mandagi@puskesmas.go.id",
@@ -24,10 +26,21 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
     puskesmas: initialData?.puskesmas || "Puskesmas Airmadidi",
     wilayahKerja: initialData?.wilayahKerja || "Kecamatan Airmadidi",
     spesialisasi: initialData?.spesialisasi || "Dokter Umum",
-    avatar: initialData?.avatar || "",
+    avatar: initialData?.avatar_url || "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(initialData?.avatar || "");
+  const [avatarPreview, setAvatarPreview] = useState(
+    initialData?.avatar_url || ""
+  );
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+
+  useEffect(() => {
+    setAvatarPreview(initialData?.avatar_url || "");
+    setProfileData((prev) => ({
+      ...prev,
+      avatar: initialData?.avatar_url || "",
+    }));
+  }, [initialData]);
 
   const handleInputChange = (field: string, value: string) => {
     setProfileData((prev) => ({ ...prev, [field]: value }));
@@ -59,6 +72,7 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
+        console.log("avatarPreview", result);
         setAvatarPreview(result);
         setProfileData((prev) => ({ ...prev, avatar: result }));
       };
@@ -70,11 +84,33 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Simpan ke backend Supabase
+    const { error } = await updateProfile({
+      nama: profileData.nama,
+      email: profileData.email,
+      nip: profileData.nip,
+      telefon: profileData.telefon,
+      puskesmas: profileData.puskesmas,
+      wilayah_kerja: profileData.wilayahKerja,
+      spesialisasi: profileData.spesialisasi,
+      avatar_url: profileData.avatar, // base64
+    });
 
-    onSave(profileData);
     setIsLoading(false);
+
+    if (!error) {
+      toast({
+        title: "Berhasil",
+        description: "Profil berhasil diperbarui",
+      });
+      onSave(profileData); // agar parent menutup form edit
+    } else {
+      toast({
+        title: "Gagal",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const getInitials = (name: string) => {
@@ -101,7 +137,17 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
             <div className="flex justify-center mb-6">
               <div className="relative group">
                 <Avatar className="w-24 h-24 ring-4 ring-white shadow-lg">
-                  <AvatarImage src={avatarPreview} />
+                  <AvatarImage
+                    src={avatarPreview}
+                    onError={() => {
+                      setAvatarPreview("");
+                      toast({
+                        title: "Gagal menampilkan gambar",
+                        description: "Format gambar tidak valid atau rusak.",
+                        variant: "destructive",
+                      });
+                    }}
+                  />
                   <AvatarFallback className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xl">
                     {getInitials(profileData.nama)}
                   </AvatarFallback>
