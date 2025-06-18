@@ -17,7 +17,7 @@ interface ProfileEditProps {
 const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { updateProfile } = useAuth();
+  const { updateProfile, profile } = useAuth();
   const [profileData, setProfileData] = useState({
     nama: initialData?.nama || "Dr. Sarah Mandagi",
     email: initialData?.email || "sarah.mandagi@puskesmas.go.id",
@@ -26,13 +26,20 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
     puskesmas: initialData?.puskesmas || "Puskesmas Airmadidi",
     wilayahKerja: initialData?.wilayahKerja || "Kecamatan Airmadidi",
     spesialisasi: initialData?.spesialisasi || "Dokter Umum",
-    avatar: initialData?.avatar || "",
+    avatar: initialData?.avatar_url || "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(initialData?.avatar || "");
+  const [avatarPreview, setAvatarPreview] = useState(
+    initialData?.avatar_url || ""
+  );
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
 
   useEffect(() => {
-    setAvatarPreview(initialData?.avatar || "");
+    setAvatarPreview(initialData?.avatar_url || "");
+    setProfileData((prev) => ({
+      ...prev,
+      avatar: initialData?.avatar_url || "",
+    }));
   }, [initialData]);
 
   const handleInputChange = (field: string, value: string) => {
@@ -65,6 +72,7 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
+        console.log("avatarPreview", result);
         setAvatarPreview(result);
         setProfileData((prev) => ({ ...prev, avatar: result }));
       };
@@ -129,7 +137,17 @@ const ProfileEdit = ({ onSave, onCancel, initialData }: ProfileEditProps) => {
             <div className="flex justify-center mb-6">
               <div className="relative group">
                 <Avatar className="w-24 h-24 ring-4 ring-white shadow-lg">
-                  <AvatarImage src={avatarPreview} />
+                  <AvatarImage
+                    src={avatarPreview}
+                    onError={() => {
+                      setAvatarPreview("");
+                      toast({
+                        title: "Gagal menampilkan gambar",
+                        description: "Format gambar tidak valid atau rusak.",
+                        variant: "destructive",
+                      });
+                    }}
+                  />
                   <AvatarFallback className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xl">
                     {getInitials(profileData.nama)}
                   </AvatarFallback>
