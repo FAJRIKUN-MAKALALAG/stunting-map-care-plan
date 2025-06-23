@@ -21,6 +21,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Database } from "@/integrations/supabase/types";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 type Child = Database["public"]["Tables"]["children"]["Row"];
 
@@ -250,76 +252,6 @@ const ReportPanel = () => {
     }
   };
 
-  const handleDownload = () => {
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>${currentReport?.title}</title>
-            <style>
-              body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
-              }
-              table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-              }
-              th, td {
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: left;
-              }
-              th {
-                background-color: #f5f5f5;
-              }
-              .header {
-                text-align: center;
-                margin-bottom: 20px;
-              }
-              .footer {
-                margin-top: 20px;
-                text-align: right;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>${currentReport?.title}</h1>
-              <p>Tanggal: ${new Date().toLocaleDateString("id-ID")}</p>
-            </div>
-            ${currentReport?.content}
-            <div class="footer">
-              <p>Dicetak pada: ${new Date().toLocaleString("id-ID")}</p>
-            </div>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-
-      // Wait for content to load
-      setTimeout(() => {
-        const content = printWindow.document.documentElement.outerHTML;
-        const blob = new Blob([content], { type: "text/html" });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `laporan-${currentReport?.title
-          .toLowerCase()
-          .replace(/\s+/g, "-")}-${
-          new Date().toISOString().split("T")[0]
-        }.html`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        printWindow.close();
-      }, 1000);
-    }
-  };
-
   const generateMonthlyReport = () => {
     return `
       <table>
@@ -432,6 +364,83 @@ const ReportPanel = () => {
         </p>
       </div>
     `;
+  };
+
+  // Export Laporan Bulanan ke Excel
+  const exportMonthlyToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      reportData.monthlyData.map((m) => ({
+        Bulan: m.month,
+        "Total Anak": m.total,
+        "Kasus Stunting": m.stunting,
+        Prevalensi:
+          m.total > 0
+            ? ((m.stunting / m.total) * 100).toFixed(1) + "%"
+            : "0.0%",
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan Bulanan");
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(
+      new Blob([wbout], { type: "application/octet-stream" }),
+      "laporan-bulanan.xlsx"
+    );
+  };
+
+  // Export Laporan Per Desa ke Excel
+  const exportVillageToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      reportData.villageData.map((v) => ({
+        Desa: v.name,
+        "Total Anak": v.total,
+        "Kasus Stunting": v.stunting,
+        Prevalensi: v.persentase.toFixed(1) + "%",
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan Desa");
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(
+      new Blob([wbout], { type: "application/octet-stream" }),
+      "laporan-desa.xlsx"
+    );
+  };
+
+  // Export Analisis Tren ke Excel
+  const exportTrendToExcel = () => {
+    const lastMonth = reportData.monthlyData[reportData.monthlyData.length - 1];
+    const prevMonth = reportData.monthlyData[reportData.monthlyData.length - 2];
+    const data = [
+      { Metrik: "Total Anak", Nilai: reportData.totalChildren },
+      { Metrik: "Kasus Stunting", Nilai: reportData.stuntingCases },
+      { Metrik: "Jumlah Desa", Nilai: reportData.villages },
+      {
+        Metrik: "Tren Bulan Terakhir (%)",
+        Nilai: reportData.trend.toFixed(1) + "%",
+      },
+      ...(lastMonth && prevMonth
+        ? [
+            { Metrik: "Bulan Terakhir", Nilai: lastMonth.month },
+            {
+              Metrik: "Kasus Stunting Bulan Terakhir",
+              Nilai: lastMonth.stunting,
+            },
+            {
+              Metrik: "Kasus Stunting Bulan Sebelumnya",
+              Nilai: prevMonth.stunting,
+            },
+          ]
+        : []),
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Analisis Tren");
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(
+      new Blob([wbout], { type: "application/octet-stream" }),
+      "analisis-tren.xlsx"
+    );
   };
 
   return (
@@ -560,10 +569,34 @@ const ReportPanel = () => {
               <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
-            <Button onClick={handleDownload}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
+            {currentReport?.title === "LAPORAN BULANAN KASUS STUNTING" && (
+              <Button
+                onClick={exportMonthlyToExcel}
+                variant="outline"
+                className="ml-2"
+              >
+                <Download className="w-4 h-4 mr-2" /> Download Excel Bulanan
+              </Button>
+            )}
+            {currentReport?.title === "LAPORAN KASUS STUNTING PER DESA" && (
+              <Button
+                onClick={exportVillageToExcel}
+                variant="outline"
+                className="ml-2"
+              >
+                <Download className="w-4 h-4 mr-2" /> Download Excel Per Desa
+              </Button>
+            )}
+            {currentReport?.title === "ANALISIS TREN KASUS STUNTING" && (
+              <Button
+                onClick={exportTrendToExcel}
+                variant="outline"
+                className="ml-2"
+              >
+                <Download className="w-4 h-4 mr-2" /> Download Excel Analisis
+                Tren
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
