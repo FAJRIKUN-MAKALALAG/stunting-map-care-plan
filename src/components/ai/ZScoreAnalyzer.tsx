@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getGeminiResponse } from "@/lib/gemini";
+import { fetchLLMBackend } from "@/lib/llm";
 
 interface ZScoreAnalyzerProps {
   zScoreBB: number;
@@ -22,23 +22,14 @@ const ZScoreAnalyzer: React.FC<ZScoreAnalyzerProps> = ({
     const getAnalysis = async () => {
       setLoading(true);
       try {
-        const response = await getGeminiResponse(
-          `Analisis kondisi gizi anak dengan data berikut:
-          - Usia: ${age} bulan
-          - Jenis Kelamin: ${gender === "male" ? "Laki-laki" : "Perempuan"}
-          - Berat Badan (Z-score): ${zScoreBB.toFixed(2)}
-          - Tinggi Badan (Z-score): ${zScoreTB.toFixed(2)}
-          
-          Berikan analisis mendalam tentang:
-          1. Kondisi gizi anak berdasarkan Z-score
-          2. Faktor-faktor yang mungkin mempengaruhi
-          3. Rekomendasi praktis untuk orang tua
-          
-          Format jawaban:
-          - Gunakan bahasa yang mudah dipahami
-          - Berikan saran yang konkret dan bisa langsung diterapkan
-          - Fokus pada aspek nutrisi dan pola asuh`
-        );
+        const prompt = `Analisis kondisi gizi anak dengan data berikut:\n- Usia: ${age} bulan\n- Jenis Kelamin: ${
+          gender === "male" ? "Laki-laki" : "Perempuan"
+        }\n- Berat Badan (Z-score): ${zScoreBB.toFixed(
+          2
+        )}\n- Tinggi Badan (Z-score): ${zScoreTB.toFixed(
+          2
+        )}\n\nBerikan analisis mendalam tentang:\n1. Kondisi gizi anak berdasarkan Z-score\n2. Faktor-faktor yang mungkin mempengaruhi\n3. Rekomendasi praktis untuk orang tua\n\nFormat jawaban:\n- Gunakan bahasa yang mudah dipahami\n- Berikan saran yang konkret dan bisa langsung diterapkan\n- Fokus pada aspek nutrisi dan pola asuh`;
+        const response = await fetchLLMBackend(prompt);
         setAnalysis(response);
       } catch (error) {
         console.error("Error getting analysis:", error);
@@ -63,7 +54,7 @@ const ZScoreAnalyzer: React.FC<ZScoreAnalyzerProps> = ({
           </div>
         ) : (
           <div className="prose prose-sm max-w-none">
-            <p className="whitespace-pre-wrap">{analysis}</p>
+            <p className="whitespace-pre-wrap text-left">{analysis}</p>
           </div>
         )}
       </CardContent>

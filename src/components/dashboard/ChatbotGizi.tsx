@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2, Bot, User, ChevronDown } from "lucide-react";
-import { getGeminiResponse } from "@/lib/gemini";
+import { fetchChatbotResponse } from "@/lib/llm";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -63,7 +63,7 @@ const ChatbotGizi: React.FC<ChatbotGiziProps> = ({ onClose }) => {
     setIsLoading(true);
 
     try {
-      const response = await getGeminiResponse(input);
+      const response = await fetchChatbotResponse(input);
       const botMessage = {
         role: "assistant" as const,
         content: response,
@@ -128,8 +128,8 @@ const ChatbotGizi: React.FC<ChatbotGiziProps> = ({ onClose }) => {
                   }`}
                 >
                   <p
-                    className={`text-sm whitespace-pre-wrap ${
-                      message.role === "user" ? "text-right" : "text-left"
+                    className={`text-sm whitespace-pre-wrap text-left ${
+                      message.role === "user" ? "text-right" : ""
                     }`}
                   >
                     {message.content}
