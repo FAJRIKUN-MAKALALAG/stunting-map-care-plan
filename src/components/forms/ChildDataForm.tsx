@@ -305,6 +305,44 @@ const ChildDataForm = () => {
         throw error;
       }
 
+      // --- NOTIFICATION LOGIC START ---
+      // 1. Notifikasi jika status gizi anak berisiko stunting/gizi kurang
+      const now = new Date().toISOString();
+      if (
+        zScoreResult.statusTB === "Stunting" ||
+        zScoreResult.statusTB === "Stunting Berat" ||
+        zScoreResult.statusBB === "Gizi Kurang" ||
+        zScoreResult.statusBB === "Gizi Buruk"
+      ) {
+        const { error: notifError } = await supabase
+          .from("notifications")
+          .insert({
+            type: "warning",
+            title: "Perhatian: Anak Berpotensi Stunting",
+            message: `Perhatian: Anak ${formData.nama} berpotensi stunting, harap tindak lanjut segera.`,
+            is_read: false,
+            created_at: now,
+            user_id: user?.id || null,
+          });
+        if (notifError)
+          console.error("Notif insert error (stunting):", notifError);
+      }
+
+      // 2. Notifikasi jika data anak berhasil ditambahkan
+      const { error: notifSuccessError } = await supabase
+        .from("notifications")
+        .insert({
+          type: "success",
+          title: "Data Anak Ditambahkan",
+          message: `Data anak ${formData.nama} berhasil ditambahkan.`,
+          is_read: false,
+          created_at: now,
+          user_id: user?.id || null,
+        });
+      if (notifSuccessError)
+        console.error("Notif insert error (success):", notifSuccessError);
+      // --- NOTIFICATION LOGIC END ---
+
       toast({
         title: "Berhasil",
         description: "Data anak berhasil disimpan",

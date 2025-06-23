@@ -78,6 +78,66 @@ const ParentDashboard: React.FC = () => {
     }
   }, [user?.id]);
 
+  // Cek peningkatan kasus stunting setiap kali children berubah
+  useEffect(() => {
+    if (children.length > 0) {
+      checkStuntingIncrease();
+    }
+  }, [children]);
+
+  // Fungsi untuk cek peningkatan kasus stunting
+  const checkStuntingIncrease = async () => {
+    // Ambil data anak bulan ini dan bulan lalu
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+    // Filter anak stunting bulan ini
+    const stuntingThisMonth = children.filter((child) => {
+      if (!child.created_at) return false;
+      const d = new Date(child.created_at);
+      return (
+        d.getMonth() === thisMonth &&
+        d.getFullYear() === thisYear &&
+        (child.status === "Stunting" || child.status === "Stunting Berat")
+      );
+    });
+
+    // Filter anak stunting bulan lalu
+    const stuntingLastMonth = children.filter((child) => {
+      if (!child.created_at) return false;
+      const d = new Date(child.created_at);
+      return (
+        d.getMonth() === lastMonth &&
+        d.getFullYear() === lastMonthYear &&
+        (child.status === "Stunting" || child.status === "Stunting Berat")
+      );
+    });
+
+    if (stuntingThisMonth.length > stuntingLastMonth.length) {
+      // Cek apakah notifikasi sudah ada untuk bulan ini
+      const { data: notif, error } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("type", "warning")
+        .eq("title", "Peningkatan Kasus Stunting")
+        .gte("created_at", new Date(thisYear, thisMonth, 1).toISOString());
+
+      if (!notif || notif.length === 0) {
+        await supabase.from("notifications").insert({
+          type: "warning",
+          title: "Peningkatan Kasus Stunting",
+          message: `Peningkatan kasus stunting terdeteksi, total kasus saat ini: ${stuntingThisMonth.length} anak.`,
+          is_read: false,
+          created_at: new Date().toISOString(),
+          user_id: user?.id || null,
+        });
+      }
+    }
+  };
+
   const fetchChildren = async () => {
     try {
       setLoading(true);
