@@ -40,6 +40,7 @@ const NotificationPanel = () => {
         .from("notifications")
         .select("*")
         .eq("user_id", user.id)
+        .eq("is_deleted", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -104,7 +105,7 @@ const NotificationPanel = () => {
     try {
       const { error } = await supabase
         .from("notifications")
-        .delete()
+        .update({ is_deleted: true })
         .eq("id", id);
 
       if (error) throw error;
@@ -129,6 +130,20 @@ const NotificationPanel = () => {
       );
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_deleted: true })
+        .eq("user_id", user.id)
+        .eq("is_deleted", false);
+      if (error) throw error;
+      setNotifications([]);
+    } catch (error) {
+      console.error("Error deleting all notifications:", error);
     }
   };
 
@@ -160,11 +175,22 @@ const NotificationPanel = () => {
               <Badge className="bg-red-500 text-white">{unreadCount}</Badge>
             )}
           </div>
-          {unreadCount > 0 && (
-            <Button variant="outline" size="sm" onClick={markAllAsRead}>
-              Tandai Semua Dibaca
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <Button variant="outline" size="sm" onClick={markAllAsRead}>
+                Tandai Semua Dibaca
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={deleteAllNotifications}
+              >
+                Hapus Semua
+              </Button>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
