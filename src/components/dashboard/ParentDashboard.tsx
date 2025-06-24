@@ -19,6 +19,7 @@ import {
   Users,
   CheckCircle,
   ClipboardList,
+  Download,
 } from "lucide-react";
 import ChatbotGizi from "./ChatbotGizi";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +27,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 type Child = Database["public"]["Tables"]["children"]["Row"];
 
@@ -77,6 +80,66 @@ const ParentDashboard: React.FC = () => {
       fetchChildren();
     }
   }, [user?.id]);
+
+  // Cek peningkatan kasus stunting setiap kali children berubah
+  useEffect(() => {
+    if (children.length > 0) {
+      checkStuntingIncrease();
+    }
+  }, [children]);
+
+  // Fungsi untuk cek peningkatan kasus stunting
+  const checkStuntingIncrease = async () => {
+    // Ambil data anak bulan ini dan bulan lalu
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+    // Filter anak stunting bulan ini
+    const stuntingThisMonth = children.filter((child) => {
+      if (!child.created_at) return false;
+      const d = new Date(child.created_at);
+      return (
+        d.getMonth() === thisMonth &&
+        d.getFullYear() === thisYear &&
+        (child.status === "Stunting" || child.status === "Stunting Berat")
+      );
+    });
+
+    // Filter anak stunting bulan lalu
+    const stuntingLastMonth = children.filter((child) => {
+      if (!child.created_at) return false;
+      const d = new Date(child.created_at);
+      return (
+        d.getMonth() === lastMonth &&
+        d.getFullYear() === lastMonthYear &&
+        (child.status === "Stunting" || child.status === "Stunting Berat")
+      );
+    });
+
+    if (stuntingThisMonth.length > stuntingLastMonth.length) {
+      // Cek apakah notifikasi sudah ada untuk bulan ini
+      const { data: notif, error } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("type", "warning")
+        .eq("title", "Peningkatan Kasus Stunting")
+        .gte("created_at", new Date(thisYear, thisMonth, 1).toISOString());
+
+      if (!notif || notif.length === 0) {
+        await supabase.from("notifications").insert({
+          type: "warning",
+          title: "Peningkatan Kasus Stunting",
+          message: `Peningkatan kasus stunting terdeteksi, total kasus saat ini: ${stuntingThisMonth.length} anak.`,
+          is_read: false,
+          created_at: new Date().toISOString(),
+          user_id: user?.id || null,
+        });
+      }
+    }
+  };
 
   const fetchChildren = async () => {
     try {
@@ -163,6 +226,83 @@ const ParentDashboard: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Export Laporan Bulanan
+  const exportMonthlyToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      reportData.monthlyData.map((m) => ({
+        Bulan: m.month,
+        "Total Anak": m.total,
+        "Kasus Stunting": m.stunting,
+        Prevalensi:
+          m.total > 0
+            ? ((m.stunting / m.total) * 100).toFixed(1) + "%"
+            : "0.0%",
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan Bulanan");
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(
+      new Blob([wbout], { type: "application/octet-stream" }),
+      "laporan-bulanan.xlsx"
+    );
+  };
+
+  // Export Laporan Per Desa
+  const exportVillageToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      reportData.villageData.map((v) => ({
+        Desa: v.name,
+        "Total Anak": v.total,
+        "Kasus Stunting": v.stunting,
+        Prevalensi: v.persentase.toFixed(1) + "%",
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan Desa");
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(
+      new Blob([wbout], { type: "application/octet-stream" }),
+      "laporan-desa.xlsx"
+    );
+  };
+
+  // Export Analisis Tren
+  const exportTrendToExcel = () => {
+    const lastMonth = reportData.monthlyData[reportData.monthlyData.length - 1];
+    const prevMonth = reportData.monthlyData[reportData.monthlyData.length - 2];
+    const data = [
+      { Metrik: "Total Anak", Nilai: reportData.totalChildren },
+      { Metrik: "Kasus Stunting", Nilai: reportData.stuntingCases },
+      { Metrik: "Jumlah Desa", Nilai: reportData.villages },
+      {
+        Metrik: "Tren Bulan Terakhir (%)",
+        Nilai: reportData.trend.toFixed(1) + "%",
+      },
+      ...(lastMonth && prevMonth
+        ? [
+            { Metrik: "Bulan Terakhir", Nilai: lastMonth.month },
+            {
+              Metrik: "Kasus Stunting Bulan Terakhir",
+              Nilai: lastMonth.stunting,
+            },
+            {
+              Metrik: "Kasus Stunting Bulan Sebelumnya",
+              Nilai: prevMonth.stunting,
+            },
+          ]
+        : []),
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Analisis Tren");
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(
+      new Blob([wbout], { type: "application/octet-stream" }),
+      "analisis-tren.xlsx"
+    );
   };
 
   return (
@@ -402,6 +542,31 @@ const ParentDashboard: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Download Buttons */}
+        <div className="mt-4 flex justify-center space-x-2">
+          <Button
+            onClick={exportMonthlyToExcel}
+            variant="outline"
+            className="ml-2"
+          >
+            <Download className="w-4 h-4 mr-2" /> Download Excel Bulanan
+          </Button>
+          <Button
+            onClick={exportVillageToExcel}
+            variant="outline"
+            className="ml-2"
+          >
+            <Download className="w-4 h-4 mr-2" /> Download Excel Per Desa
+          </Button>
+          <Button
+            onClick={exportTrendToExcel}
+            className="ml-2"
+            variant="outline"
+          >
+            <Download className="w-4 h-4 mr-2" /> Download Excel Analisis Tren
+          </Button>
         </div>
       </div>
     </div>

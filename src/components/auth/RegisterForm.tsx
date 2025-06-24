@@ -1,10 +1,19 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, User, Mail, Lock, Heart, Phone, MapPin } from 'lucide-react';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Eye,
+  EyeOff,
+  User,
+  Mail,
+  Lock,
+  Heart,
+  Phone,
+  MapPin,
+} from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 interface RegisterFormProps {
   onRegister: (userData: any) => void;
@@ -13,36 +22,40 @@ interface RegisterFormProps {
 
 const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
   const [formData, setFormData] = useState({
-    nama: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    nip: '',
-    telefon: '',
-    puskesmas: '',
-    wilayahKerja: ''
+    nama: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    nip: "",
+    telefon: "",
+    puskesmas: "",
+    wilayahKerja: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
-      alert('Password tidak cocok!');
+      toast({
+        title: "Password tidak cocok!",
+        description: "Pastikan password dan konfirmasi password sama.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
-    
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     onRegister(formData);
     setIsLoading(false);
   };
@@ -61,12 +74,15 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
             Bergabunglah dalam program penanggulangan stunting
           </p>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nama" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="nama"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Nama Lengkap
                 </Label>
                 <div className="relative">
@@ -76,7 +92,7 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     type="text"
                     placeholder="Dr. Nama Lengkap"
                     value={formData.nama}
-                    onChange={(e) => handleInputChange('nama', e.target.value)}
+                    onChange={(e) => handleInputChange("nama", e.target.value)}
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -84,7 +100,10 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="nip" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="nip"
+                  className="text-sm font-medium text-gray-700"
+                >
                   NIP
                 </Label>
                 <div className="relative">
@@ -94,7 +113,7 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     type="text"
                     placeholder="1234567890"
                     value={formData.nip}
-                    onChange={(e) => handleInputChange('nip', e.target.value)}
+                    onChange={(e) => handleInputChange("nip", e.target.value)}
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -103,7 +122,10 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
                 Email
               </Label>
               <div className="relative">
@@ -113,7 +135,7 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                   type="email"
                   placeholder="dokter@puskesmas.go.id"
                   value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
                   className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                   required
                 />
@@ -122,7 +144,10 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Password
                 </Label>
                 <div className="relative">
@@ -132,7 +157,9 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     type={showPassword ? "text" : "password"}
                     placeholder="Min. 8 karakter"
                     value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("password", e.target.value)
+                    }
                     className="pl-10 pr-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                     minLength={8}
@@ -142,13 +169,20 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="confirmPassword"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Konfirmasi Password
                 </Label>
                 <div className="relative">
@@ -158,7 +192,9 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Ulangi password"
                     value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("confirmPassword", e.target.value)
+                    }
                     className="pl-10 pr-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -167,7 +203,11 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -175,7 +215,10 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="telefon" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="telefon"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Nomor Telepon
                 </Label>
                 <div className="relative">
@@ -185,7 +228,9 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     type="tel"
                     placeholder="08123456789"
                     value={formData.telefon}
-                    onChange={(e) => handleInputChange('telefon', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("telefon", e.target.value)
+                    }
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -193,7 +238,10 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="puskesmas" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="puskesmas"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Puskesmas
                 </Label>
                 <div className="relative">
@@ -203,7 +251,9 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     type="text"
                     placeholder="Puskesmas Airmadidi"
                     value={formData.puskesmas}
-                    onChange={(e) => handleInputChange('puskesmas', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("puskesmas", e.target.value)
+                    }
                     className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
@@ -212,7 +262,10 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="wilayahKerja" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="wilayahKerja"
+                className="text-sm font-medium text-gray-700"
+              >
                 Wilayah Kerja
               </Label>
               <div className="relative">
@@ -222,7 +275,9 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                   type="text"
                   placeholder="Kecamatan Airmadidi"
                   value={formData.wilayahKerja}
-                  onChange={(e) => handleInputChange('wilayahKerja', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("wilayahKerja", e.target.value)
+                  }
                   className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                   required
                 />
@@ -240,13 +295,13 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                   <span>Mendaftar...</span>
                 </div>
               ) : (
-                'Daftar Akun'
+                "Daftar Akun"
               )}
             </Button>
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Sudah punya akun?{' '}
+                Sudah punya akun?{" "}
                 <button
                   type="button"
                   onClick={onSwitchToLogin}
