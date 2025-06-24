@@ -1,3 +1,85 @@
+# Stunting Map Care Plan Frontend
+
+## 🚀 Fitur Utama
+
+- **Autentikasi**: Login, register, dan manajemen profil dengan validasi lengkap.
+- **Dashboard**: Statistik stunting, notifikasi, dan visualisasi data.
+- **Manajemen Desa**: Daftar dan detail desa, status stunting, filter & search.
+- **Form Data Anak**: Input data anak, perhitungan Z-Score WHO, rekomendasi LLM.
+- **Chatbot Gemini AI**: Tanya jawab seputar stunting & gizi anak.
+- **Analisis LLM**: Penjelasan kesehatan anak otomatis setelah hitung Z-Score.
+- **UI Modern**: Komponen Shadcn/UI, responsive, mobile-first.
+- **Integrasi Supabase**: Data real-time, state management dengan React hooks.
+
+---
+
+## ⚡️ Cara Kerja Integrasi Backend
+
+- **Supabase**:  
+  Frontend **tidak menggunakan .env** untuk Supabase.  
+  **URL dan anon key Supabase diambil dari backend** melalui endpoint:
+
+  ```
+  GET /api/supabase-keys
+  ```
+
+  > Pastikan backend berjalan dan endpoint ini tersedia.
+
+- **Chatbot & LLM**:  
+  Semua permintaan Chatbot dan LLM (analisis gizi) **dikirim ke backend**:
+  - `/api/chatbot`
+  - `/api/llm-analyze`
+
+---
+
+## 🛠️ Cara Menjalankan Project
+
+### 1. **Jalankan Backend**
+
+Pastikan backend FastAPI berjalan di `localhost:8000` (atau sesuaikan endpoint di frontend).
+
+### 2. **Jalankan Frontend**
+
+```sh
+npm install
+npm run dev
+```
+
+Frontend akan otomatis mengambil Supabase URL & anon key dari backend.
+
+---
+
+## 📝 Catatan Pengembangan
+
+- **Jangan tambahkan .env untuk Supabase di frontend!**
+- Jika ingin ganti Supabase project, cukup update endpoint backend `/api/supabase-keys`.
+- Semua query ke Supabase, Chatbot, dan LLM dilakukan via backend.
+
+---
+
+## 📦 Struktur Folder Penting
+
+- `src/integrations/supabase/client.ts`  
+  Inisialisasi Supabase client **dengan key dari backend**.
+- `src/lib/llm.ts`  
+  Fungsi fetch ke endpoint LLM backend.
+- `src/components/dashboard/ChatbotGizi.tsx`  
+  Komponen Chatbot yang fetch ke backend.
+
+---
+
+## 👩‍💻 Kontribusi
+
+- Pastikan perubahan pada integrasi Supabase/LLM/Chatbot selalu via backend.
+- Jangan hardcode credential di frontend.
+
+---
+
+## 📄 PRD & Fitur Lain
+
+- [x] Validasi data ketat, error handling, ARIA, TypeScript strict, dsb.
+- [x] Real-time update, local storage, state management React hooks.
+
 (Product Requirements Document) dalam sistem ini:
 
 🔐 Authentication Components
@@ -53,8 +135,6 @@ Error Handling - Proper error states dan loading indicators
 Accessibility - ARIA labels dan keyboard navigation
 Performance - Lazy loading dan optimized rendering
 Type Safety - Full TypeScript coverage dengan strict types
-large language models untuk memberikan penjelasan tentang kesehatan anak setelah menghitung z score
-chatbot gemini AI untuk mempermudah orangtua untuk bertanya seputaran stunting
 
 📊 Data Management
 Local Storage - Penyimpanan data sementara di browser
