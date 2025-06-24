@@ -10,7 +10,7 @@ import {
   TrendingUp,
   CheckCircle,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from "@/integrations/supabase/client";
 import VillageDetail from "./VillageDetail";
 
 interface Village {
@@ -37,6 +37,7 @@ const VillageList = () => {
   const fetchVillages = async () => {
     try {
       setLoading(true);
+      const supabase = await getSupabaseClient();
       // Fetch children data to calculate village statistics
       const { data: children, error: childrenError } = await supabase
         .from("children")

@@ -10,7 +10,7 @@ import {
   CheckCircle,
   X,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Notification {
@@ -36,6 +36,7 @@ const NotificationPanel = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
+      const supabase = await getSupabaseClient();
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
@@ -84,6 +85,7 @@ const NotificationPanel = () => {
 
   const markAsRead = async (id: string) => {
     try {
+      const supabase = await getSupabaseClient();
       const { error } = await supabase
         .from("notifications")
         .update({ is_read: true })
@@ -103,6 +105,7 @@ const NotificationPanel = () => {
 
   const dismissNotification = async (id: string) => {
     try {
+      const supabase = await getSupabaseClient();
       const { error } = await supabase
         .from("notifications")
         .update({ is_deleted: true })
@@ -118,6 +121,7 @@ const NotificationPanel = () => {
 
   const markAllAsRead = async () => {
     try {
+      const supabase = await getSupabaseClient();
       const { error } = await supabase
         .from("notifications")
         .update({ is_read: true })
@@ -135,6 +139,7 @@ const NotificationPanel = () => {
 
   const deleteAllNotifications = async () => {
     try {
+      const supabase = await getSupabaseClient();
       const { error } = await supabase
         .from("notifications")
         .update({ is_deleted: true })

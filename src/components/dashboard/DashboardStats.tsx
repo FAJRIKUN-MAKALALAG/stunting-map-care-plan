@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Baby, TrendingUp, Heart } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from "@/integrations/supabase/client";
 
 const DashboardStats = () => {
   const [stats, setStats] = useState({
@@ -16,6 +16,7 @@ const DashboardStats = () => {
 
   const fetchStats = async () => {
     try {
+      const supabase = await getSupabaseClient();
       const { data: children, error } = await supabase
         .from("children")
         .select("status");

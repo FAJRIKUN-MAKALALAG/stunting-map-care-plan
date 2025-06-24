@@ -29,7 +29,7 @@ import {
   getStuntingRecommendation,
 } from "@/utils/whoZScore";
 import ZScoreAnalyzer from "@/components/ai/ZScoreAnalyzer";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from "@/integrations/supabase/client";
 import { fetchLLMBackend } from "@/lib/llm";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -253,6 +253,7 @@ const ChildDataForm = () => {
 
     try {
       // Calculate Z-score first
+      const supabase = await getSupabaseClient();
       await calculateZScore(formData);
 
       if (!zScoreResult) {

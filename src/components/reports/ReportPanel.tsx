@@ -11,7 +11,7 @@ import {
   TrendingUp,
   Printer,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -68,6 +68,7 @@ const ReportPanel = () => {
   const fetchReportData = async () => {
     try {
       setLoading(true);
+      const supabase = await getSupabaseClient();
       const { data: children, error } = await supabase
         .from("children")
         .select("*");
