@@ -27,11 +27,10 @@ import {
   calculateAge,
   calculateWHOZScore,
   getStuntingRecommendation,
-  ZScoreResult,
 } from "@/utils/whoZScore";
 import ZScoreAnalyzer from "@/components/ai/ZScoreAnalyzer";
 import { supabase } from "@/integrations/supabase/client";
-import { getGeminiResponse } from "@/lib/gemini";
+import { fetchLLMBackend } from "@/lib/llm";
 import { useAuth } from "@/hooks/useAuth";
 
 interface ChildData {
@@ -207,22 +206,19 @@ const ChildDataForm = () => {
       );
 
       // Dapatkan analisis dari Gemini
-      const analysis = await getGeminiResponse(
-        `Analisis kondisi gizi anak dengan data berikut:
-        - Usia: ${usiaBulan} bulan
-        - Jenis Kelamin: ${jenisKelamin}
-        - Berat Badan: ${beratBadan} kg (Z-score: ${zScoreBB.toFixed(2)})
-        - Tinggi Badan: ${tinggiBadan} cm (Z-score: ${zScoreTB.toFixed(2)})
-        
-        Berikan analisis singkat (2-3 kalimat) tentang kondisi gizi anak dan saran praktis untuk orang tua.`
-      );
+      const prompt = `Analisis kondisi gizi anak dengan data berikut:\n- Usia: ${usiaBulan} bulan\n- Jenis Kelamin: ${jenisKelamin}\n- Berat Badan: ${beratBadan} kg (Z-score: ${zScoreBB.toFixed(
+        2
+      )})\n- Tinggi Badan: ${tinggiBadan} cm (Z-score: ${zScoreTB.toFixed(
+        2
+      )})\n\nBerikan analisis singkat (2-3 kalimat) tentang kondisi gizi anak dan saran praktis untuk orang tua.`;
+      const analysisResult = await fetchLLMBackend(prompt);
 
       setZScoreResult({
         zScoreBB,
         zScoreTB,
         statusBB: getStatusBB(zScoreBB),
         statusTB: getStatusTB(zScoreTB),
-        analysis,
+        analysis: analysisResult,
       });
     } catch (error) {
       console.error("Error calculating Z-score:", error);
