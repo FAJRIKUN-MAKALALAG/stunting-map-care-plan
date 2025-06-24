@@ -27,7 +27,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from "@/integrations/supabase/client";
 import ReportPanel from "@/components/reports/ReportPanel";
 import DoctorList from "@/components/dashboard/DoctorList";
 
@@ -53,6 +53,7 @@ const Index = () => {
 
   const fetchDashboardStats = async () => {
     try {
+      const supabase = await getSupabaseClient();
       const { data: children, error } = await supabase
         .from("children")
         .select("id, status");

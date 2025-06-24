@@ -1,25 +1,19 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Eye,
-  EyeOff,
-  User,
-  Lock,
-  Heart,
-  Baby,
-  Shield,
-} from "lucide-react";
+import { Eye, EyeOff, User, Lock, Heart, Baby, Shield } from "lucide-react";
 
 interface ParentLoginFormProps {
-  onLogin: (email: string, password: string, role: 'parent') => void;
+  onLogin: (email: string, password: string, role: "parent") => void;
   onSwitchToDoctor: () => void;
 }
 
-const ParentLoginForm = ({ onLogin, onSwitchToDoctor }: ParentLoginFormProps) => {
+const ParentLoginForm = ({
+  onLogin,
+  onSwitchToDoctor,
+}: ParentLoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,9 +25,25 @@ const ParentLoginForm = ({ onLogin, onSwitchToDoctor }: ParentLoginFormProps) =>
 
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    onLogin(email, password, 'parent');
+    const supabase = await getSupabaseClient();
+    supabase.auth.onAuthStateChange(...);
+
+    onLogin(email, password, "parent");
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    let subscription: any;
+    (async () => {
+      const supabase = await getSupabaseClient();
+      subscription = supabase.auth.onAuthStateChange((event, session) => {
+        // ...handle event
+      });
+    })();
+    return () => {
+      if (subscription) subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 relative overflow-hidden">
@@ -72,7 +82,10 @@ const ParentLoginForm = ({ onLogin, onSwitchToDoctor }: ParentLoginFormProps) =>
           <CardContent className="px-8 pb-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-semibold text-gray-700"
+                >
                   Email Address
                 </Label>
                 <div className="relative">
@@ -90,7 +103,10 @@ const ParentLoginForm = ({ onLogin, onSwitchToDoctor }: ParentLoginFormProps) =>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-semibold text-gray-700"
+                >
                   Password
                 </Label>
                 <div className="relative">
@@ -109,7 +125,11 @@ const ParentLoginForm = ({ onLogin, onSwitchToDoctor }: ParentLoginFormProps) =>
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -146,7 +166,8 @@ const ParentLoginForm = ({ onLogin, onSwitchToDoctor }: ParentLoginFormProps) =>
 
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mt-6">
                 <p className="text-blue-800 text-sm text-center">
-                  <strong>Portal Khusus:</strong> Untuk memantau pertumbuhan dan mendapatkan konsultasi gizi anak
+                  <strong>Portal Khusus:</strong> Untuk memantau pertumbuhan dan
+                  mendapatkan konsultasi gizi anak
                 </p>
               </div>
             </form>

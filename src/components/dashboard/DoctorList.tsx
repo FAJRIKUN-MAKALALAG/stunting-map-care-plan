@@ -20,7 +20,7 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseClient } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface Doctor {
@@ -50,6 +50,7 @@ const DoctorList = () => {
       setLoading(true);
       setError(null);
 
+      const supabase = await getSupabaseClient();
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
