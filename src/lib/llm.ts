@@ -5,7 +5,7 @@
  */
 export async function fetchChatbotResponse(message: string): Promise<string> {
   try {
-    const res = await fetch("http://localhost:8000/api/chatbot", {
+    const res = await fetch("https://api.stuntingcaresulut.cyou/api/chatbot", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
@@ -32,7 +32,7 @@ export async function fetchChatbotResponse(message: string): Promise<string> {
  */
 export async function fetchLLMBackend(
   prompt: string,
-  endpoint = "http://localhost:8000/api/llm-analyze"
+  endpoint = "https://api.stuntingcaresulut.cyou/api/llm-analyze"
 ): Promise<string> {
   try {
     const res = await fetch(endpoint, {

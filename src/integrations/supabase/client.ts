@@ -10,7 +10,7 @@ export async function getSupabaseClient(): Promise<SupabaseClient> {
   let anon_key = localStorage.getItem("supabase_anon_key");
   if (!url || !anon_key) {
     console.log("[Supabase] Fetching key from backend...");
-    const res = await fetch("http://localhost:8000/api/supabase-keys");
+    const res = await fetch("http://0.0.0.0:8000/api/supabase-keys");
     const data = await res.json();
     url = data.url;
     anon_key = data.anon_key;

@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Create profile after successful signup
       if (data.user) {
-        const { error: profileError } = await supabase.from("profiles").insert([
+        const { error: profileError } = await supabase.from("profiles").upsert([
           {
             id: data.user.id,
             ...userData,
