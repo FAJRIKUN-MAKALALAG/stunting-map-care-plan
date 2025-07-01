@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { User, Session, AuthError } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/ui/use-toast";
 
 interface Profile {
   id: string;
@@ -107,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Create profile after successful signup
       if (data.user) {
-        const { error: profileError } = await supabase.from("profiles").insert([
+        const { error: profileError } = await supabase.from("profiles").upsert([
           {
             id: data.user.id,
             ...userData,
@@ -205,4 +207,23 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+export async function claimChildren(parentId: string, childNiks: string[]) {
+  const supabase = await getSupabaseClient();
+  for (const nik of childNiks) {
+    console.log("Sebelum update anak dengan NIK:", nik);
+    const { data, error } = await supabase
+      .from("children")
+      .update({ parent_id: parentId })
+      .eq("nik", nik)
+      .is("parent_id", null);
+    console.log("Sesudah update", { data, error });
+    if (error) {
+      console.error("Gagal update parent_id untuk NIK", nik, error);
+      throw error;
+    } else {
+      console.log("Update berhasil untuk NIK", nik, data);
+    }
+  }
 }

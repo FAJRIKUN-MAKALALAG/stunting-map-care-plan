@@ -1,27 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables");
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-  global: {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-    },
-  },
-});
+import { getSupabaseClient } from "@/integrations/supabase/client";
 
 // Helper functions
 export const getCurrentUser = async () => {
+  const supabase = await getSupabaseClient();
   const {
     data: { user },
     error,
@@ -31,6 +12,7 @@ export const getCurrentUser = async () => {
 };
 
 export const signOut = async () => {
+  const supabase = await getSupabaseClient();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 };
@@ -54,6 +36,7 @@ export type Profile = {
 export type Child = {
   id: string;
   user_id: string;
+  parent_id?: string;
   nama: string;
   nik?: string;
   tanggal_lahir: string;
@@ -83,3 +66,30 @@ export type Notification = {
   is_read: boolean;
   created_at: string;
 };
+
+export async function claimChildren(parentId: string, childNiks: string[]) {
+  const supabase = await getSupabaseClient();
+  for (const nik of childNiks) {
+    console.log("Mengupdate anak dengan NIK:", nik, "-> parent_id:", parentId);
+    const { data, error } = await supabase
+      .from("children")
+      .update({ parent_id: parentId })
+      .eq("nik", nik)
+      .is("parent_id", null); // hanya update jika parent_id masih null
+    if (error) {
+      console.error("Gagal update parent_id untuk NIK", nik, error);
+    } else {
+      console.log("Update berhasil untuk NIK", nik, data);
+    }
+  }
+}
+
+export async function fetchChildrenByParent(parentId: string) {
+  const supabase = await getSupabaseClient();
+  const { data, error } = await supabase
+    .from("children")
+    .select("*")
+    .eq("parent_id", parentId);
+  if (error) throw error;
+  return data;
+}

@@ -15,13 +15,35 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
+// Tambahkan tipe data untuk form register
+export interface RegisterFormData {
+  nama: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  nip?: string;
+  telefon?: string;
+  puskesmas?: string;
+  wilayahKerja?: string;
+  role: string;
+}
+
 interface RegisterFormProps {
-  onRegister: (userData: any) => void;
+  onRegister: (
+    userData: RegisterFormData
+  ) => Promise<{ user?: { id: string } } | undefined>;
   onSwitchToLogin: () => void;
 }
 
+// Tambahkan fungsi mapping role UI ke DB
+function mapRoleToDb(roleUi: string): "parent" | "doctor" {
+  if (roleUi === "Orang Tua") return "parent";
+  if (roleUi === "Tenaga Kesehatan") return "doctor";
+  return roleUi as "parent" | "doctor";
+}
+
 const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     nama: "",
     email: "",
     password: "",
@@ -30,14 +52,29 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
     telefon: "",
     puskesmas: "",
     wilayahKerja: "",
+    role: "Tenaga Kesehatan",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [childNiks, setChildNiks] = useState([""]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData((prev) => ({ ...prev, role: e.target.value }));
+    if (e.target.value !== "Orang Tua") setChildNiks([""]);
+  };
+
+  const handleChildNikChange = (idx: number, value: string) => {
+    setChildNiks((prev) => prev.map((nik, i) => (i === idx ? value : nik)));
+  };
+
+  const addChildNik = () => setChildNiks((prev) => [...prev, ""]);
+  const removeChildNik = (idx: number) =>
+    setChildNiks((prev) => prev.filter((_, i) => i !== idx));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +93,32 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    onRegister(formData);
+    // Gunakan fungsi mapping agar role yang dikirim ke DB konsisten
+    const result = await onRegister({
+      ...formData,
+      role: mapRoleToDb(formData.role),
+    });
+
+    // Jika terjadi error pada pembuatan profile, tampilkan error dan jangan lanjut claim anak
+    if (result?.error) {
+      toast({
+        title: "Gagal membuat profil!",
+        description:
+          result.error.message || "Terjadi kesalahan saat membuat profil.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (mapRoleToDb(formData.role) === "parent" && result?.user?.id) {
+      const { claimChildren } = await import("@/lib/supabase");
+      await claimChildren(
+        result.user.id,
+        childNiks.filter((nik) => nik.trim() !== "")
+      );
+    }
+
     setIsLoading(false);
   };
 
@@ -77,92 +139,109 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="nama"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Nama Lengkap
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="nama"
-                    type="text"
-                    placeholder="Dr. Nama Lengkap"
-                    value={formData.nama}
-                    onChange={(e) => handleInputChange("nama", e.target.value)}
-                    className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="nip"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  NIP
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="nip"
-                    type="text"
-                    placeholder="1234567890"
-                    value={formData.nip}
-                    onChange={(e) => handleInputChange("nip", e.target.value)}
-                    className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label
-                htmlFor="email"
+                htmlFor="nama"
                 className="text-sm font-medium text-gray-700"
               >
-                Email
+                Nama Lengkap
               </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="dokter@puskesmas.go.id"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                  required
-                />
-              </div>
+              <Input
+                id="nama"
+                type="text"
+                placeholder="Nama lengkap"
+                value={formData.nama}
+                onChange={(e) => handleInputChange("nama", e.target.value)}
+                className="h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                required
+              />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="password"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Password
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="space-y-2">
+              <Label
+                htmlFor="role"
+                className="text-sm font-medium text-gray-700"
+              >
+                Role
+              </Label>
+              <select
+                id="role"
+                value={formData.role}
+                onChange={handleRoleChange}
+                className="w-full h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 rounded-lg px-3"
+                required
+              >
+                <option value="Tenaga Kesehatan">Tenaga Kesehatan</option>
+                <option value="Orang Tua">Orang Tua</option>
+              </select>
+            </div>
+            {formData.role === "Orang Tua" && (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    NIK Anak
+                  </Label>
+                  {childNiks.map((nik, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                      <Input
+                        type="text"
+                        placeholder="Masukkan NIK anak"
+                        value={nik}
+                        onChange={(e) =>
+                          handleChildNikChange(idx, e.target.value)
+                        }
+                        className="flex-1"
+                        required={idx === 0}
+                      />
+                      {childNiks.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => removeChildNik(idx)}
+                        >
+                          -
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" onClick={addChildNik}>
+                    Tambah NIK Anak
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="email"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="email@example.com"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    className="h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="password"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Password
+                  </Label>
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Min. 8 karakter"
+                    placeholder="Minimal 6 karakter"
                     value={formData.password}
                     onChange={(e) =>
                       handleInputChange("password", e.target.value)
                     }
-                    className="pl-10 pr-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
-                    minLength={8}
+                    minLength={6}
                   />
                   <button
                     type="button"
@@ -176,53 +255,34 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     )}
                   </button>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Konfirmasi Password
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </>
+            )}
+            {formData.role === "Tenaga Kesehatan" && (
+              <>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="nip"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    NIP
+                  </Label>
                   <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Ulangi password"
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      handleInputChange("confirmPassword", e.target.value)
-                    }
-                    className="pl-10 pr-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                    id="nip"
+                    type="text"
+                    placeholder="1234567890"
+                    value={formData.nip}
+                    onChange={(e) => handleInputChange("nip", e.target.value)}
+                    className="h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
                 </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="telefon"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Nomor Telepon
-                </Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="telefon"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Nomor Telepon
+                  </Label>
                   <Input
                     id="telefon"
                     type="tel"
@@ -231,21 +291,17 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     onChange={(e) =>
                       handleInputChange("telefon", e.target.value)
                     }
-                    className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="puskesmas"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Puskesmas
-                </Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="puskesmas"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Puskesmas
+                  </Label>
                   <Input
                     id="puskesmas"
                     type="text"
@@ -254,36 +310,31 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                     onChange={(e) =>
                       handleInputChange("puskesmas", e.target.value)
                     }
-                    className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                     required
                   />
                 </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="wilayahKerja"
-                className="text-sm font-medium text-gray-700"
-              >
-                Wilayah Kerja
-              </Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="wilayahKerja"
-                  type="text"
-                  placeholder="Kecamatan Airmadidi"
-                  value={formData.wilayahKerja}
-                  onChange={(e) =>
-                    handleInputChange("wilayahKerja", e.target.value)
-                  }
-                  className="pl-10 h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                  required
-                />
-              </div>
-            </div>
-
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="wilayahKerja"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Wilayah Kerja
+                  </Label>
+                  <Input
+                    id="wilayahKerja"
+                    type="text"
+                    placeholder="Kecamatan Airmadidi"
+                    value={formData.wilayahKerja}
+                    onChange={(e) =>
+                      handleInputChange("wilayahKerja", e.target.value)
+                    }
+                    className="h-11 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+              </>
+            )}
             <Button
               type="submit"
               disabled={isLoading}
@@ -298,7 +349,6 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }: RegisterFormProps) => {
                 "Daftar Akun"
               )}
             </Button>
-
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Sudah punya akun?{" "}

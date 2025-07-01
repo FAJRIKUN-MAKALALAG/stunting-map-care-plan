@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,20 @@ import ChatbotGizi from "./ChatbotGizi";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { getSupabaseClient } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
+import { Database, Child } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-
-type Child = Database["public"]["Tables"]["children"]["Row"];
+import { claimChildren } from "@/lib/supabase";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface ChildData {
   id: string;
@@ -63,6 +71,13 @@ const ParentDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showChatbot, setShowChatbot] = useState(false);
   const navigate = useNavigate();
+  const [showAddNik, setShowAddNik] = useState(false);
+  const [nikInputs, setNikInputs] = useState([""]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [chatbotWidth, setChatbotWidth] = useState(400); // Default width
+  const [chatbotHeight, setChatbotHeight] = useState(600); // Default height
+
+  const chatbotRef = useRef<HTMLDivElement>(null);
 
   // Calculate statistics
   const totalChildren = children.length;
@@ -70,26 +85,41 @@ const ParentDashboard: React.FC = () => {
     (child) => child.status === "Normal"
   ).length;
   const stuntingChildren = children.filter(
-    (child) => child.status === "Stunting"
+    (child) => child.status === "Stunting" || child.status === "Stunting Berat"
   ).length;
   const notMeasuredChildren = children.filter((child) => !child.status).length;
 
-  useEffect(() => {
-    if (user?.id) {
-      console.log("Fetching data for user:", user.id);
-      fetchChildren();
+  const fetchChildren = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const supabase = await getSupabaseClient();
+      const { data, error } = await supabase
+        .from("children")
+        .select("*")
+        .eq("parent_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) {
+        setError("Gagal memuat data anak");
+        setChildren([]);
+        return;
+      }
+      setChildren(data || []);
+    } catch (err) {
+      setError("Gagal memuat data anak");
+      setChildren([]);
+    } finally {
+      setLoading(false);
     }
   }, [user?.id]);
 
-  // Cek peningkatan kasus stunting setiap kali children berubah
   useEffect(() => {
-    if (children.length > 0) {
-      checkStuntingIncrease();
+    if (user?.id) {
+      fetchChildren();
     }
-  }, [children]);
+  }, [user?.id, fetchChildren]);
 
-  // Fungsi untuk cek peningkatan kasus stunting
-  const checkStuntingIncrease = async () => {
+  const checkStuntingIncrease = useCallback(async () => {
     // Ambil data anak bulan ini dan bulan lalu
     const now = new Date();
     const thisMonth = now.getMonth();
@@ -140,44 +170,40 @@ const ParentDashboard: React.FC = () => {
         });
       }
     }
-  };
+  }, [children]);
 
-  const fetchChildren = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      console.log("Fetching all children data");
-
-      // Query untuk mengambil semua data anak tanpa filter user_id
-      const supabase = await getSupabaseClient();
-      const { data, error } = await supabase
-        .from("children")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      console.log("Supabase response:", { data, error });
-
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
-
-      if (!data || data.length === 0) {
-        console.log("No data found");
-        setChildren([]);
-        return;
-      }
-
-      console.log("Setting children data:", data);
-      setChildren(data);
-    } catch (err) {
-      console.error("Error fetching children:", err);
-      setError("Gagal memuat data anak");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (children.length > 0) {
+      checkStuntingIncrease();
     }
-  };
+  }, [children, checkStuntingIncrease]);
+
+  // Handle chatbot resize
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startWidth = chatbotRef.current?.offsetWidth || chatbotWidth;
+      const startHeight = chatbotRef.current?.offsetHeight || chatbotHeight;
+
+      const doDrag = (mouseEvent: MouseEvent) => {
+        const newWidth = startWidth + (mouseEvent.clientX - startX);
+        const newHeight = startHeight + (mouseEvent.clientY - startY);
+        setChatbotWidth(Math.max(300, newWidth)); // Minimum width
+        setChatbotHeight(Math.max(400, newHeight)); // Minimum height
+      };
+
+      const stopDrag = () => {
+        window.removeEventListener("mousemove", doDrag);
+        window.removeEventListener("mouseup", stopDrag);
+      };
+
+      window.addEventListener("mousemove", doDrag);
+      window.addEventListener("mouseup", stopDrag);
+    },
+    [chatbotWidth, chatbotHeight]
+  );
 
   // Fungsi hitung usia dari tanggal lahir
   function hitungUsia(tanggalLahir: string | null) {
@@ -229,6 +255,47 @@ const ParentDashboard: React.FC = () => {
       });
     }
   };
+
+  const handleNikChange = (idx: number, value: string) => {
+    setNikInputs((prev) => prev.map((nik, i) => (i === idx ? value : nik)));
+  };
+  const addNikInput = () => setNikInputs((prev) => [...prev, ""]);
+  const removeNikInput = (idx: number) =>
+    setNikInputs((prev) => prev.filter((_, i) => i !== idx));
+
+  const handleSubmitNik = async () => {
+    setIsSubmitting(true);
+    try {
+      if (!user?.id) {
+        toast({
+          title: "Gagal",
+          description: "User tidak ditemukan.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      await claimChildren(
+        user.id,
+        nikInputs.filter((nik) => nik.trim() !== "")
+      );
+      toast({ title: "Berhasil", description: "Klaim anak berhasil!" });
+      setShowAddNik(false);
+      setNikInputs([""]);
+    } catch (error) {
+      console.error("Gagal update parent_id untuk NIK", nikInputs, error);
+      toast({
+        title: "Gagal",
+        description: `Gagal klaim anak: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
       {/* Header */}
@@ -255,7 +322,7 @@ const ParentDashboard: React.FC = () => {
 
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -330,7 +397,7 @@ const ParentDashboard: React.FC = () => {
         </div>
 
         {/* Main Content and Chatbot Sidebar */}
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Main Content */}
           <div className="flex-1 space-y-6">
             {/* Search Bar */}
@@ -451,21 +518,101 @@ const ParentDashboard: React.FC = () => {
           </div>
 
           {/* Chatbot Sidebar */}
-          <div className="w-96 flex-shrink-0">
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl sticky top-6 hover:shadow-2xl transition-all duration-200">
-              <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+          <div
+            className="w-full lg:flex-shrink-0"
+            style={{ width: chatbotWidth, minWidth: 300, maxWidth: "100%" }}
+          >
+            <Card
+              ref={chatbotRef}
+              className="bg-white/80 backdrop-blur-sm border-0 shadow-xl lg:sticky lg:top-6 hover:shadow-2xl transition-all duration-200 overflow-hidden relative"
+              style={{
+                height: chatbotHeight,
+                minHeight: 400,
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex-shrink-0">
                 <CardTitle className="flex items-center text-xl font-bold">
                   <MessageCircle className="h-6 w-6 mr-2" />
                   Konsultasi Gizi
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
-                <div className="h-[600px] flex flex-col">
-                  <ChatbotGizi onClose={() => {}} />
+              <CardContent className="p-0 flex-grow overflow-hidden">
+                <div className="h-full flex flex-col">
+                  <ChatbotGizi
+                    onClose={() => setShowChatbot(false)}
+                    childrenData={children}
+                  />
                 </div>
               </CardContent>
+              <div
+                className="absolute bottom-0 right-0 w-4 h-4 bg-gray-300 cursor-nwse-resize"
+                onMouseDown={handleMouseDown}
+              ></div>
             </Card>
           </div>
+        </div>
+
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">Anak Terdaftar</h2>
+          <Dialog open={showAddNik} onOpenChange={setShowAddNik}>
+            <DialogTrigger asChild>
+              <Button>Tambah NIK Anak</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Tambah NIK Anak</DialogTitle>
+                <DialogDescription>
+                  Masukkan NIK anak yang ingin Anda klaim.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {nikInputs.map((nik, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input
+                      id={`nik-${idx}`}
+                      type="text"
+                      placeholder="NIK Anak"
+                      value={nik}
+                      onChange={(e) => handleNikChange(idx, e.target.value)}
+                      required={idx === 0}
+                      className="flex-1"
+                    />
+                    {nikInputs.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => removeNikInput(idx)}
+                      >
+                        -
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={addNikInput}>
+                  Tambah Input NIK
+                </Button>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowAddNik(false)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSubmitNik}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Menglaim..." : "Klaim Anak"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

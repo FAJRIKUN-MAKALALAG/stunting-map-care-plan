@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2, Bot, User, ChevronDown } from "lucide-react";
 import { fetchChatbotResponse } from "@/lib/llm";
 import { useToast } from "@/hooks/use-toast";
+import { Child } from "@/integrations/supabase/types";
 
 interface Message {
   role: "user" | "assistant";
@@ -14,9 +15,10 @@ interface Message {
 
 interface ChatbotGiziProps {
   onClose: () => void;
+  childrenData: Child[];
 }
 
-const ChatbotGizi: React.FC<ChatbotGiziProps> = ({ onClose }) => {
+const ChatbotGizi: React.FC<ChatbotGiziProps> = ({ onClose, childrenData }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -63,7 +65,7 @@ const ChatbotGizi: React.FC<ChatbotGiziProps> = ({ onClose }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetchChatbotResponse(input);
+      const response = await fetchChatbotResponse(input, childrenData);
       const botMessage = {
         role: "assistant" as const,
         content: response,

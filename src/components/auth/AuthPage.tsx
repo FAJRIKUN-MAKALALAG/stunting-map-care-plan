@@ -14,6 +14,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Heart, Stethoscope, Baby, Shield } from "lucide-react";
+import { claimChildren } from "@/lib/supabase";
+import { getSupabaseClient } from "@/integrations/supabase/client";
 
 const AuthPage = () => {
   const { signIn, signUp } = useAuth();
@@ -39,6 +41,9 @@ const AuthPage = () => {
     wilayah_kerja: "",
     spesialisasi: "Dokter Umum",
   });
+
+  // Tambahkan state untuk NIK anak
+  const [childNiks, setChildNiks] = useState([""]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,10 +92,37 @@ const AuthPage = () => {
         title: "Registrasi Berhasil",
         description: "Silakan check email untuk verifikasi akun",
       });
+      if (registerData.role === "parent") {
+        const supabase = await getSupabaseClient();
+        const { data: profiles, error: profileError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("email", registerData.email)
+          .single();
+        if (profiles?.id) {
+          await claimChildren(
+            profiles.id,
+            childNiks.filter((nik) => nik.trim() !== "")
+          );
+        } else {
+          console.error(
+            "Gagal mendapatkan UUID parent dari profiles",
+            profileError
+          );
+        }
+      }
     }
-
     setLoading(false);
   };
+
+  const handleChildNikChange = (idx: number, value: string) => {
+    setChildNiks((prev) => prev.map((nik, i) => (i === idx ? value : nik)));
+  };
+
+  const addChildNik = () => setChildNiks((prev) => [...prev, ""]);
+
+  const removeChildNik = (idx: number) =>
+    setChildNiks((prev) => prev.filter((_, i) => i !== idx));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-teal-100">
@@ -191,9 +223,10 @@ const AuthPage = () => {
                     <Label htmlFor="role">Role</Label>
                     <Select
                       value={registerData.role}
-                      onValueChange={(value: "doctor" | "parent") =>
-                        setRegisterData({ ...registerData, role: value })
-                      }
+                      onValueChange={(value: "doctor" | "parent") => {
+                        setRegisterData({ ...registerData, role: value });
+                        if (value !== "parent") setChildNiks([""]);
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -204,6 +237,44 @@ const AuthPage = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {registerData.role === "parent" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">
+                        NIK Anak
+                      </Label>
+                      {childNiks.map((nik, idx) => (
+                        <div key={idx} className="flex gap-2 mb-2">
+                          <Input
+                            type="text"
+                            placeholder="Masukkan NIK anak"
+                            value={nik}
+                            onChange={(e) =>
+                              handleChildNikChange(idx, e.target.value)
+                            }
+                            className="flex-1"
+                            required={idx === 0}
+                          />
+                          {childNiks.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              onClick={() => removeChildNik(idx)}
+                            >
+                              -
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addChildNik}
+                      >
+                        Tambah NIK Anak
+                      </Button>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="register-email">Email</Label>
