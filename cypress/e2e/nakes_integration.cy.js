@@ -1,7 +1,7 @@
 describe("E2E - Tenaga Kesehatan", () => {
   it("bisa login dan input data anak", () => {
     // 1. Kunjungi halaman login
-    cy.visit("http://localhost:8080/auth");
+    cy.visit("https://stuntingcaresulut.domcloud.dev");
 
     // 2. Isi form login
     cy.get("#login-email").type("fajrikunmakalalag@gmail.com");

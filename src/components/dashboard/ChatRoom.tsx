@@ -34,6 +34,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ doctor, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isOnline = !!doctor.is_online;
 
@@ -56,9 +57,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ doctor, onClose }) => {
   useEffect(() => {
     fetchMessages();
     // Realtime subscription
+    let supabase: any;
     let channel: any;
     (async () => {
-      const supabase = await getSupabaseClient();
+      supabase = await getSupabaseClient();
       channel = supabase
         .channel("chatroom")
         .on(
@@ -75,14 +77,18 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ doctor, onClose }) => {
               (msg.sender_id === user?.id && msg.receiver_id === doctor.id) ||
               (msg.sender_id === doctor.id && msg.receiver_id === user?.id)
             ) {
-              setMessages((prev) => [...prev, msg]);
+              // Cegah duplikasi pesan
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === msg.id)) return prev;
+                return [...prev, msg];
+              });
             }
           }
         )
         .subscribe();
     })();
     return () => {
-      if (channel) channel.unsubscribe();
+      if (supabase && channel) supabase.removeChannel(channel);
     };
     // eslint-disable-next-line
   }, [doctor.id, user?.id]);
@@ -94,13 +100,40 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ doctor, onClose }) => {
   // Send message
   const sendMessage = async () => {
     if (!input.trim() || !user || !doctor.id) return;
+    const messageText = input.trim();
     setInput("");
-    const supabase = await getSupabaseClient();
-    await supabase.from("messages").insert({
+    setError(null);
+
+    // Optimistic UI: tambahkan pesan ke state langsung
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
       sender_id: user.id,
       receiver_id: doctor.id,
-      message: input.trim(),
-    });
+      message: messageText,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
+    const supabase = await getSupabaseClient();
+    const { data, error } = await supabase
+      .from("messages")
+      .insert({
+        sender_id: user.id,
+        receiver_id: doctor.id,
+        message: messageText,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setError("Gagal mengirim pesan. Coba lagi.");
+      // Hapus pesan optimis jika gagal
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    } else if (data) {
+      // Ganti pesan optimis dengan pesan dari server (agar id & created_at benar)
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    }
     // Tidak perlu fetchMessages lagi, pesan akan masuk via realtime
   };
 
@@ -198,6 +231,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ doctor, onClose }) => {
             Kirim
           </button>
         </form>
+        {error && <div className="text-red-500 text-center py-2">{error}</div>}
       </div>
     </div>
   );
