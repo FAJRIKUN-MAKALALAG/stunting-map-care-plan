@@ -141,6 +141,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
+      // Setelah login berhasil, update status online
+      if (data.user) {
+        await supabase
+          .from("profiles")
+          .update({ is_online: true })
+          .eq("id", data.user.id);
+      }
+
       console.log("Sign in successful:", data);
       return { error: null };
     } catch (error: any) {
@@ -152,6 +160,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       const supabase = await getSupabaseClient();
+      // Update status offline sebelum logout
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({ is_online: false })
+          .eq("id", user.id);
+      }
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error) {
