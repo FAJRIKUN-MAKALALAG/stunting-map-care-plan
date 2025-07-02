@@ -1,0 +1,56 @@
+*   [33m892e54c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #9 from FAJRIKUN-MAKALALAG/fajrikun
+[31m|[m[32m\[m  
+[31m|[m * [33md26ece4[m[33m ([m[1;31morigin/fajrikun[m[33m, [m[1;32mfajrikun[m[33m)[m 1. update orangtua hanya bisa lihat data anaknya melalui input nik anak ( bisa lebih dari 1 anak kalau anaknya lebih dari 1) saat register sebagai orangtua. 2. chatbot bisa mengetahui data anak dari orangtua yang login sebagai orangtua, 3. penambahan fitur chat real-time untuk tenaga kesehatan pada konsultasi, 4. atur unit testing n2n dan compnent untuk frontend
+* [32m|[m [33md378450[m Merge pull request #8 from FAJRIKUN-MAKALALAG/fajrikun
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33mb0889a0[m 1. membuat agar data anak yang terdaftar hanya bisa di akses oleh orangtuanya lewat NIK anak. 2. penambahan fitur NIK anak agar setelah orangtua login, orangtua bisa menambahkan anaknya kalau anaknya lebih dari 1., dan 3. pengaturan chatbot agar bisa membaca data anak yang ada di dashboard orangtua.
+[33m|[m * [33mabb2872[m membuat agar bisa di run di local untuk perbaikan
+* [34m|[m [33m2a40b55[m Merge pull request #7 from FAJRIKUN-MAKALALAG/fajrikun
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33ma61035b[m update README
+* [36m|[m [33mb4cd6c7[m Merge pull request #6 from FAJRIKUN-MAKALALAG/fajrikun
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33maf0ae94[m[33m ([m[1;32mfajrikun2[m[33m)[m membuat agar supabase masuk ke backend dengan cara, url dan anon key dari supabase dimasukan ke backend dan dari sistem frontend harus meminta endpoint dari backend untuk url dan anonkeynya
+[1;31m|[m[1;31m/[m  
+*   [33m285b604[m[33m ([m[1;31morigin/fajrikun2[m[33m)[m Merge pull request #4 from FAJRIKUN-MAKALALAG/akmal
+[1;33m|[m[1;34m\[m  
+[1;33m|[m * [33mac14728[m[33m ([m[1;31morigin/akmal[m[33m)[m FIX laporan agar bisa di download dalam format exel
+[1;33m|[m * [33m0798663[m fix notifikasi agar bisa dihapus dan dibaca, datanya disimpan didatabase
+[1;33m|[m * [33m6572e78[m perbaiki notifikasi
+* [1;34m|[m [33m6afb2f3[m Merge pull request #5 from FAJRIKUN-MAKALALAG/fajrikun
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33meab950c[m setting LLM.ts
+[1;35m|[m * [33mf6f496c[m pemisahan chtbot dan LLM dari frontend ke backend
+[1;35m|[m * [33m2f091f6[m fix foto profil
+[1;35m|[m * [33m9400b20[m menambah foto profil pengguna, menyimpan perubahan foto, foto disimpan sebagai base64
+* [1;36m|[m [33m33fc65d[m Merge pull request #3 from FAJRIKUN-MAKALALAG/fajrikun
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m2aaf070[m penambahan fitur konsultasi memakai data realtime yang menampilkan profile dokter yang ada pada database
+[31m|[m * [33mf34b9c3[m merapihkan text dari chatbot
+[31m|[m * [33m6b56ce3[m memperbaiki tampilan dari dasboard orang tua, posisi chatbot dan tampilan chatbot agar lebih bagus
+* [32m|[m [33m3a5d254[m Merge pull request #2 from FAJRIKUN-MAKALALAG/fajrikun
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33mf4464ec[m  memperbaiki laporan analisis dan export dengan data real time. bisa di unduh maupun di print dengan data real time yang ada di database
+[33m|[m * [33mc616bf9[m merubah data dummy data desa dengan data real time
+[33m|[m * [33m5213a5e[m hapus tombol mata untuk melihat halaman profil dan pada setting menambahkan fitur input foto diri tapi blum tersambung di database upload fotonya
+[33m|[m * [33mb52d63f[m menghapus data dummy pada dasboard dan memperbaiki notifikasi & alert agar mengambil data real time dari database
+[33m|[m[33m/[m  
+* [33m7a907d4[m penyesuaian background
+* [33med9ebd9[m Update README.md
+* [33m1fec06d[m penambahan chatbot dan authentication login dan database supabase, serta memperbaiki UI dan juga menambahkan LLM setelah menghitung z score data anak yang di input untuk memberikan tanggapan yang baik sesuai dari data anak
+* [33mda4f42e[m Apply database schema changes
+* [33m193840c[m Connect to Supabase project
+* [33m84affe0[m Fix: Syntax error in ChildDataForm.tsx
+* [33m3fa6706[m feat: Add parent login, dashboard, and LLM insights
+*   [33m1bcb861[m Merge pull request #1 from FAJRIKUN-MAKALALAG/fajrikun
+[35m|[m[36m\[m  
+[35m|[m * [33mbd6bc64[m  perubahan warna login page menjadi merah muda
+[35m|[m[35m/[m  
+* [33m1811bf5[m Update README.md
+* [33m9af77ea[m Update README.md
+* [33mf2b43ef[m Feat: Implement profile view and edit
+* [33mf3cbac6[m Fix: Implement village detail button functionality
+* [33m44646e3[m Refactor: Improve UI and functionality
+* [33m6b00d9c[m Refactor: Replace map with village names, add login & profile edit
+* [33me0c2a6a[m Implement stunting application requirements
+* [33m48b2abb[m Use tech stack vite_react_shadcn_ts
