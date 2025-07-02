@@ -27,7 +27,7 @@ export async function fetchChatbotResponse(
       childrenInfo
     )}\n\n(Mohon berikan jawaban singkat dan relevan seputar gizi anak, dengan mempertimbangkan data anak di atas jika ada pertanyaan spesifik tentang anak.)`;
 
-    const res = await fetch("http://localhost:8000/api/chatbot", {
+    const res = await fetch("https://api.stuntingcaresulut.cyou/api/chatbot", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: fullMessage }),
@@ -54,7 +54,7 @@ export async function fetchChatbotResponse(
  */
 export async function fetchLLMBackend(
   prompt: string,
-  endpoint = "http://localhost:8000/api/llm-analyze"
+  endpoint = "https://api.stuntingcaresulut.cyou/api/llm-analyze"
 ): Promise<string> {
   try {
     const res = await fetch(endpoint, {
